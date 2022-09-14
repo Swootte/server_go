@@ -1,0 +1,550 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+union QRCodeOwner = EnterpriseSmall | UserSmall | Paiement
+
+directive @auth(requires: Role = ADMIN) on OBJECT | FIELD_DEFINITION | QUERY | MUTATION
+directive @authWithPin(requires: Role = ADMIN) on OBJECT | FIELD_DEFINITION | QUERY | MUTATION
+directive @authCommerce on OBJECT | FIELD_DEFINITION | QUERY | MUTATION
+directive @owner(rules: [OwnerRule!]!) on OBJECT | FIELD_DEFINITION | QUERY | MUTATION
+directive @tokenVerify on OBJECT | FIELD_DEFINITION | QUERY | MUTATION
+
+scalar Upload
+scalar Byte
+
+enum ModelOperation { create update delete read }
+enum AuthStrategy { owner groups private public }
+
+input OwnerRule {
+  allow: AuthStrategy
+  ownerField: String
+  operations: [ModelOperation]
+}
+
+
+type UserCreated {
+  user: User!
+  customToken: String!
+}
+
+
+type File {
+  filename: String!
+  mimetype: String!
+  encoding: String!
+}
+
+enum UserStatus {
+  BANNED
+  SHADOWBANNED
+  ACTIIVE
+}
+
+enum EnterpriseType {
+  INDIVIDUAL
+  COMPANY
+  ONG
+}
+
+enum Role {
+  ADMIN,
+  REVIEWER,
+  USER,
+  PAUSER_ROLE,
+  MINTER_ROLE,
+  BURNER_ROLE,
+  FREEZE_ROLE,
+  AGENT_ROLE,
+  MANAGMENT_ROLE,
+  KYC_AGENT,
+  OWNER
+}
+
+enum IdentityStatus {
+  NOT_UPLOADED
+  UPLOADED
+  VERIFIED
+  REFUSED
+}
+
+enum ResidenceProofStatus {
+  NOT_UPLOADED
+  UPLOADED
+  VERIFIED
+  REFUSED
+}
+
+enum PaymentType {
+  PAIEMENT
+  TRANSFERT
+  TOPUP
+  WITHDRAW
+  COMMERCE
+}
+
+enum PaymentStatus {
+  FINALIZED
+  ONGOING
+  REFUNDED
+  IN_PROGRESS
+  CANCELLED
+  DONE
+  FAILED
+  CANCELLED_USER
+  CANCELLED_AGENT
+  REQUIRES_PAIEMENT
+  REQUIRES_CONFIRMATION
+  REQUIRES_ACTION
+}
+
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  PROCESSED
+}
+
+
+
+
+
+type Paiement {
+  _id: ID!
+  status: PaymentStatus!
+  type: PaymentType!
+  creator: UserSmall
+  token: String!
+  amount: Int!
+  cancellor: UserSmall
+  agency: Agency
+  agencyId: String
+  destination: String!
+  validator: UserSmall
+  transactionId: String
+  createdAt: String
+  description: String
+  updatedAt: String
+  shortId: String!
+  destinationUser: UserSmall
+  enterprise: EnterpriseSmall
+  enterpriseId: String
+}
+
+
+input RatingInsideInput {
+    rating_count: Int
+    rating_total: Float
+}
+
+  input BirthDate {
+    day: Int!
+    month: Int!
+    year: Int!
+    iso: String!
+  }
+
+  type BirthDateOut {
+    day: Int!
+    month: Int!
+    year: Int!
+    iso: String!
+  }
+
+
+input UserInput {
+    adress: AdressInput!
+    display_name: String
+    email: String!
+    first_name: String!
+    last_name: String!
+    phonenumber: String!
+    photoUrl: String
+    website: String
+    firebaseUID: String
+    country: String!
+    birth_date: BirthDate!
+    fcmToken: String
+    age: Int
+    fullDocumentImage: String
+    personalIdNumber: String
+    faceImage: String
+    placeOfBirth: String
+    sex: String
+    race: String
+    nationality: String
+    expired: Boolean
+    documentNumber: String
+    dateOfExpiryPermanent: Boolean
+    dateOfIssue: String
+    dateOfExpiry: String
+    pinCode: String!
+    invitedBy: String
+    keypair: KeypairInput
+    createdAt: String
+    updatedAt: String
+    token: String!
+    password: String!
+  }
+
+
+  type RatingUser {
+    rating_total: Float
+    rating_count: Int
+  }
+
+  input KeypairInput {
+    publicKey: String
+    secretKey: String
+  }
+
+  type Keypair {
+    publicKey: String!
+    secretKey: String!
+  }
+
+
+
+
+  input EmailInput {
+    name: String!
+    email: String!
+    message: String!
+  }
+
+
+
+  type User @auth(requires: OWNER)  {
+    _id: ID!
+    firebaseUID: String
+    email: String
+    first_name: String
+    last_name: String
+    phonenumber: String
+    createdAt: String
+    photoUrl: String
+    updatedAt : String
+    defaultCurrency: String
+    adresses : [Adress] 
+    fcmToken: String
+    rating: RatingUser
+    permissions: [Role]
+    country: String
+    contacts: [String]
+    wallet: Wallet
+    currency: String
+    birth_date: BirthDateOut
+    notificationPermission: Boolean
+    fee: Int
+    is_online: Boolean
+    indentityStatus: IdentityStatus
+    residenceProofStatus: ResidenceProofStatus
+    default_method: String
+    keypair: Keypair
+    deleted: Boolean
+    pinCode: String
+  }
+
+
+  type UserSmall {
+    _id: ID!
+    first_name: String
+    last_name: String
+    photoUrl: String
+    address: String
+  }
+
+
+  input LocationInput {
+    latitude: Float
+    longitude: Float
+  }
+
+  type Location {
+    latitude: Float
+    longitude: Float
+  }
+
+  
+
+  input AdressInput {
+    title: String
+    location: LocationInput
+    is_chosed: Boolean
+    city: String
+  }
+
+
+
+  type Adress {
+    title: String
+    location: Location
+    is_chosed: Boolean
+  }
+
+
+
+  type Wallet {
+    address: String
+    amount: Float
+    isFrozen: Boolean
+  }
+
+
+
+
+  type Notification {
+    _id: String
+    text: String
+    type: String
+    imgUrl: String
+    isRead: Boolean
+    from: UserSmall
+    createdAt: String
+  }
+
+
+
+  enum AgencyOpenStatus {
+    OPEN
+    CLOSED
+    CLOSED_DEFINITELY
+}
+
+
+  input AgencyInpyt {
+    title: String!,
+    address: String!,
+    city: String!
+    country: String!
+    token: String!
+  }
+
+
+  type Agency {
+    _id: ID
+    title: String,
+    address: String,
+    status: AgencyOpenStatus
+    createdAt: String
+    city: String
+    country: String
+  }
+
+
+  input TopUpInput {
+    amount: Float!,
+    agency: ID!,
+    token: String!
+    destination: String!
+    destinationUser: String!
+  }
+
+
+  input WithdrawInput {
+    amount: Float!
+    agency: ID!
+    token: String!
+    destination: String!
+    destinationUser: String!
+  }
+
+
+
+input PersonInput {
+  first_name: String!
+  last_name: String!
+  email: String!
+  address: String!
+  city: String!
+  zip: String
+  state: String
+}
+
+type Person {
+  first_name: String
+  last_name: String
+  email: String
+  address: String
+  city: String
+  zip: String
+  state: String
+}
+
+input EnterpriseInput {
+  name: String!
+  country: String!
+  address: AdressInput!
+  logoUrl: String
+  website: String
+  type: EnterpriseType!
+  rccm: String!
+  activitySector: String!
+  person: PersonInput 
+  description: String
+  sellingPhysicalGoods: Boolean
+  selfShippingProduct: Boolean
+  shippingDelay: String
+  transactionLibele: String!
+  abregedLibele: String!
+  phone: String!
+  email: String!
+}
+
+type Enterprise  {
+    _id: ID!
+    type: String
+    name: String
+    website: String
+    logoUrl: String
+    creator: ID!
+    createdAt: String!
+    updatedAt: String
+    person: Person! 
+    publishableKey: String!
+    private_key: String!
+    walletPublicKey: String!
+    walletSecretKey: String
+    country: String
+    address: Adress
+    default_enterprise: Boolean!
+    description: String
+    sellingPhysicalGoods: Boolean
+    selfShippingProduct: Boolean
+    shippingDelay: String
+    transactionLibele: String
+    abregedLibele: String
+    phone: String
+    email: String
+    rccm: String
+    sector: String
+}
+
+
+type EnterpriseSmall   {
+    _id: ID!
+    name: String
+    website: String
+    logoUrl: String
+    walletPublicKey: String!
+    country: String
+    address: Adress
+}
+
+type TransactionWithPageInfo {
+  transactions: [Paiement]!
+  pageTotal: Float
+}
+
+type ChartData {
+  currentTotal: Float,
+  formerTotal: Float,
+  pourcentageDifference: Float
+  isPositive: Boolean
+  chart: [Float]
+}
+
+
+
+  type Subscription {
+    notificationAdded(listener: String!): Notification @auth(requires: USER)
+    transactionPayed(id: String!): Paiement
+    contactAdded(listener: String!): Notification @auth(requires: USER)
+  }
+
+  type Query {
+    userExist(uid: String!): Boolean!
+    usersExist: User
+    loadNotification: [Notification]! @auth(requires: USER) 
+    loadNotificationCount: Float! @auth(requires: USER)
+    loadBalance: Wallet! @auth(requires: USER)
+    searchUser(searchText: String): [UserSmall]! @auth(requires: USER)
+    getAllUserContact(searchText: String!): [UserSmall]! @auth(requires: USER)
+    getAllContactNotAdded(searchText: String!): [UserSmall]! @auth(requires: USER)
+    getActivity: [Paiement]! @auth(requires: USER)
+    loadQRCode: String! @auth(requires: USER)
+    loadTokenSupply(token: String!): Int!
+    retrieveAllAgnecies: [Agency!]! @auth(requires: USER)
+    retrieveAllAgenciesTransactions: [Paiement]! @auth(requires: AGENT_ROLE)
+    getAllParticipatingTransactions: [Paiement]! @auth(requires: USER)
+    getQrOwner(qrcode: String!): QRCodeOwner! @auth(requires: USER)
+    getTransactionByIdUnauthed(id: String!): Paiement
+    getTransactionById(id: String!): Paiement @auth(requires: USER)
+    getTransactionByIdAgent(id: String!): Paiement @auth(requires: AGENT_ROLE)
+    getselfEmployedPDF: String! @auth(requires: USER)
+    getAllUserEnterprise: [Enterprise!] @auth(requires: USER)
+    
+
+    # transaction enterprise
+    getAllTransactionByEnterpriseId(enterpriseId: String!, from: String!, to: String!, limit: Float!, skip: Float!): TransactionWithPageInfo! @auth(requires: USER)
+    getSuccessFullTransactionByEnterpriseId(enterpriseId: String!, from: String!, to: String!, limit: Float!, skip: Float!): TransactionWithPageInfo! @auth(requires: USER)
+    getRefundedTransactionByEnterpriseId(enterpriseId: String!, from: String!, to: String!, limit: Float!, skip: Float!): TransactionWithPageInfo! @auth(requires: USER)
+    getNonCapturedTransactionByEnterpriseId(enterpriseId: String!, from: String!, to: String!, limit: Float!, skip: Float!): TransactionWithPageInfo! @auth(requires: USER)
+    getFailedTransactionByEnterpriseId(enterpriseId: String!, from: String!, to: String!, limit: Float!, skip: Float!): TransactionWithPageInfo! @auth(requires: USER)
+
+
+    # enterprise panels
+    getProfilNetChartData(enterpriseId: String!, from: String!, to: String!): ChartData! @auth(requires: USER)
+    getProfilBrutChartData(enterpriseId: String!, from: String!, to: String!): ChartData! @auth(requires: USER)
+    getProfilNonCarpturedChartData(enterpriseId: String!, from: String!, to: String!): ChartData! @auth(requires: USER)
+
+    getEnterpriseBalance(enterpriseId: String!): Float! @auth(requires: USER)
+
+    getEntrepriseById(enterpriseId: String!): Enterprise! @auth(requires: USER)
+    getPdf(enterpriseId: String!): String! @auth(requires: USER)
+
+  }
+
+  
+
+  type Mutation {
+    connect(token: String!): String! 
+    createUser(user: UserInput): UserCreated! @tokenVerify
+    deleteUser: Boolean! @auth(requires: USER)
+    sendEmail(email: EmailInput): Boolean!
+    suscribeToNewsLetter(email: String!): Boolean!
+    createTransfer(address: String, token: String!, amount: Float!, pinCode: String!, destinationUser: String!): Boolean! @authWithPin(requires: USER)
+    updateProfilePicture(link: String!): Boolean! @auth(requires: USER)
+    createContact(contact: String!): Boolean! @auth(requires: USER)
+    removeContact(contact_id: String!): Boolean! @auth(requires: USER)
+    addAGency(agency: AgencyInpyt!, pinCode: String!): String! @authWithPin(requires: MANAGMENT_ROLE)
+    addWithDraw(withdraw: WithdrawInput!, pinCode: String!): String! @authWithPin(requires: USER) 
+    addTopUp(topup: TopUpInput!, pinCode: String!): String! @authWithPin(requires: USER)
+    confirmTransactionAgent(transaction_id: String!, type: PaymentType!, token: String!, pinCode: String!,): Boolean! @authWithPin(requires: AGENT_ROLE)
+    cancelTransactionAgent(transaction_id: String, type: PaymentType, pinCode: String!): Boolean! @authWithPin(requires: AGENT_ROLE)
+    cancelTransactionUser(transaction_id: String, type: PaymentType, pinCode: String!): Boolean! @authWithPin(requires: USER)
+    setIsOnline(toggle: Boolean): Boolean! @auth(requires: USER)
+    updateFcmToken(fcmToken: String): Boolean! @auth(requires: USER)
+    changePinCode(newPin: String): Boolean! @auth(requires: USER)
+    setAllNotificationToRead: Boolean! @auth(requires: USER)
+    uploadFile(file: Upload!, type: String!): User! @auth(requires: USER)
+    reportTransaction(transaction_id: String!, message: String!): Boolean @auth(requires: USER)
+    assignRole(userId: String!, role: String!, pinCode: String!, token: String!): Boolean @authWithPin(requires: AGENT_ROLE)
+    unassignRole(userId: String!, role: String!, pinCode: String!, token: String!): Boolean @authWithPin(requires: AGENT_ROLE)
+
+    # create enterprise
+    createEnterprise(enterprise: EnterpriseInput!): Enterprise! @auth(requires: USER)
+    authenticateForPayment(amount: Float!, ref: String): QRCodeOwner! @authCommerce
+    recreateEnterprisePublishableKey(enterpriseId: String!, pinCode: String!): [Enterprise]! @authWithPin(requires: USER)
+    recreateEnterprisePrivateKey(enterpriseId: String!, pinCode: String!): [Enterprise]! @authWithPin(requires: USER)
+    removeEnterprise(enterpriseId: String!, pinCode: String!): [Enterprise]! @authWithPin(requires: USER)
+    changeDefaultEnterprise(enterpriseId: String!): [Enterprise]! @auth(requires: USER)
+
+
+
+    # update enterprise
+    updateEnterpriseType(enterpriseId: String!, type: String!, country: String!): [Enterprise]! @auth(requires: USER)
+    updatePersonnalInformation(enterpriseId: String!, first_name: String!, last_name: String!, email: String!, address: String!, city: String!, state: String!, zip: String!): [Enterprise]! @auth(requires: USER)
+    updateEnterpriseInformation(enterpriseId: String!, rccm: String!, sector: String!, website: String, description: String): [Enterprise]! @auth(requires: USER)
+    updateExecutionInformation(enterpriseId: String!, sellingPyshicalGoods: Boolean, selfShipping: Boolean, shippingDelay: String): [Enterprise]! @auth(requires: USER)
+    updatePublicInformation(enterpriseId: String!, name: String!, libelle: String!, libelleAbreged: String!, email: String, phone: String!): [Enterprise]! @auth(requires: USER)
+
+
+
+    # create Transacttion
+    payUnConfirmedTransaction(enterpriseId: String!, pinCode: String!, transactionId: String!): Paiement! @authWithPin(requires: USER)
+    payEnterprise(enterpriseId: String!, amount: Float!, pinCode: String!): Paiement! @authWithPin(requires: USER)
+    refundTransaction(enterpriseId: String!, pinCode: String!, transactionId: String!): Boolean! @authWithPin(requires: USER)
+    cancelTransactionEnterprise(enterpriseId: String!, pinCode: String!, transactionId: String!): Boolean! @authWithPin(requires: USER)
+    transferMoneyEnterprise(enterpriseId: String!, pinCode: String!, publicKey: String!, amount: Float!): Boolean! @authWithPin(requires: USER)
+  }
