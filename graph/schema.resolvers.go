@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"os"
 	_agency "server/agency"
 	_agent "server/agent"
@@ -715,6 +716,27 @@ func (r *paiementResolver) Cancellor(ctx context.Context, obj *model.Paiement) (
 		return &model.UserSmall{}, nil
 	}
 	return dataloaders.NewLoaders().User(ctx, *obj.CreatorID)
+}
+
+func (r *paiementResolver) Amount(ctx context.Context, obj *model.Paiement) (float64, error) {
+	_amount, _ := new(big.Int).SetString(obj.AmountInt64, 0)
+	amountbigFloat := finance.FromWei(*_amount)
+	output, _ := amountbigFloat.Float64()
+	return output, nil
+}
+
+func (r *paiementResolver) Fee(ctx context.Context, obj *model.Paiement) (*float64, error) {
+	_amount, _ := new(big.Int).SetString(obj.FeeInt64, 0)
+	amountbigFloat := finance.FromWei(*_amount)
+	output, _ := amountbigFloat.Float64()
+	return &output, nil
+}
+
+func (r *paiementResolver) FeeEnterprise(ctx context.Context, obj *model.Paiement) (*float64, error) {
+	_amount, _ := new(big.Int).SetString(obj.FeeEnterpriseInt64, 0)
+	amountbigFloat := finance.FromWei(*_amount)
+	output, _ := amountbigFloat.Float64()
+	return &output, nil
 }
 
 func (r *paiementResolver) Validator(ctx context.Context, obj *model.Paiement) (*model.UserSmall, error) {

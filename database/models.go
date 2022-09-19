@@ -31,30 +31,32 @@ type BirthDate struct {
 }
 
 type NewDBUserMongo struct {
-	FirstName         string        `validate:"nonzero" bson:"first_name"`
-	Last_name         string        `validate:"nonzero" bson:"last_name"`
-	Email             string        `validate:"nonzero" bson:"email"`
-	Phone_number      string        `validate:"nonzero" bson:"phonenumber"`
-	Adresses          []DBAddress   `bson:"adresses"`
-	FirebaseUID       string        `validate:"nonzero" bson:"firebaseUID"`
-	CreatedAt         string        `validate:"nonzero" bson:"createdAt"`
-	UpdatedAt         string        `validate:"nonzero" bson:"updatedAt"`
-	FcmToken          string        `bson:"fcmToken"`
-	PhotoUrl          string        `validate:"nonzero" bson:"photoUrl"`
-	Keypair           NewKeyPair    `bson:"keypair"`
-	Is_terms_accepted bool          `bson:"is_terms_accepted"`
-	Country           string        `bson:"country"`
-	DefaultCurrency   string        `validate:"nonzero" bson:"defaultCurrency"`
-	User_baned        bool          `bson:"user_baned"`
-	Birth_date        BirthDate     `bson:"birth_date"`
-	Contacts          []string      `bson:"contacts"`
-	ShortId           string        `bson:"shortId"`
-	Permissions       []*model.Role `bson:"permissions"`
-	Fee               int           `bson:"fee"`
-	Is_online         bool          `bson:"is_online"`
-	PinCode           string        `validate:"nonzero" bson="pinCode"`
-	InvitedBy         string        `bson:"invitedBy "`
-	AccountFrozen     bool          `bson:"accountFrozen"`
-	Deleted           bool          `bson:"deleted"`
-	Ip                *ConnectionDB `bson:"iplocation"`
+	FirstName            string                     `validate:"nonzero" bson:"first_name"`
+	Last_name            string                     `validate:"nonzero" bson:"last_name"`
+	Email                string                     `validate:"nonzero" bson:"email"`
+	Phone_number         string                     `validate:"nonzero" bson:"phonenumber"`
+	Adresses             []DBAddress                `bson:"adresses"`
+	FirebaseUID          string                     `validate:"nonzero" bson:"firebaseUID"`
+	CreatedAt            string                     `validate:"nonzero" bson:"createdAt"`
+	UpdatedAt            string                     `validate:"nonzero" bson:"updatedAt"`
+	FcmToken             string                     `bson:"fcmToken"`
+	PhotoUrl             string                     `validate:"nonzero" bson:"photoUrl"`
+	Keypair              NewKeyPair                 `bson:"keypair"`
+	Is_terms_accepted    bool                       `bson:"is_terms_accepted"`
+	Country              string                     `bson:"country"`
+	DefaultCurrency      string                     `validate:"nonzero" bson:"defaultCurrency"`
+	User_baned           bool                       `bson:"user_baned"`
+	Birth_date           BirthDate                  `bson:"birth_date"`
+	Contacts             []string                   `bson:"contacts"`
+	ShortId              string                     `bson:"shortId"`
+	Permissions          []*model.Role              `bson:"permissions"`
+	IndentityStatus      model.IdentityStatus       `bson:"indentityStatus"`
+	ResidenceProofStatus model.ResidenceProofStatus `bson:"residenceProofStatus"`
+	Fee                  int                        `bson:"fee"`
+	Is_online            bool                       `bson:"is_online"`
+	PinCode              string                     `validate:"nonzero" bson="pinCode"`
+	InvitedBy            string                     `bson:"invitedBy "`
+	AccountFrozen        bool                       `bson:"accountFrozen"`
+	Deleted              bool                       `bson:"deleted"`
+	Ip                   *ConnectionDB              `bson:"iplocation"`
 }

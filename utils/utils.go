@@ -10,7 +10,6 @@ import (
 
 const projectDirName = "server"
 
-// LoadEnv loads env vars from .env
 func LoadEnv() {
 	if os.Getenv("env") != "HEROKU" {
 		re := regexp.MustCompile(`^(.*` + projectDirName + `)`)

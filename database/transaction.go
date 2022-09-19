@@ -12,9 +12,9 @@ type DBTransaction struct {
 	AgencyID          *primitive.ObjectID `validate:"nonzero" bson:"agencyId"`
 	ValidatorID       *primitive.ObjectID `validate:"nonzero" bson:"validatorId"`
 	CancellorID       *primitive.ObjectID `validate:"nonzero" bson:"cancellorId"`
-	Fee               int64               `validate:"nonzero" bson:"fee"`
-	FeeEnterprise     int64               `validate:"nonzero" bson:"feeEnterprise"`
-	Amount            int64               `validate:"nonzero" bson:"amount"`
+	Fee               string              `validate:"nonzero" bson:"fee"`
+	FeeEnterprise     string              `validate:"nonzero" bson:"feeEnterprise"`
+	Amount            string              `validate:"nonzero" bson:"amount"`
 	Token             string              `validate:"nonzero" bson:"token"`
 	Description       string              `validate:"nonzero" bson:"description"`
 	DestinationUserID *primitive.ObjectID `validate:"nonzero" bson:"destinationUserId"`

@@ -68,15 +68,15 @@ func GetEthereumError(err string) string {
 	case "14":
 		return "The user don't have the role to perform this action"
 	case "15":
-		return "The user don't have the role to perform this action"
+		return "L'utilisateur utilisé pour faire cette action n'est pas valide"
 	case "16":
-		return "The user don't have the role to perform this action"
+		return "Vous n'avez pas assez de fond sur votre compte pour effectuer ce retrait"
 	case "17":
-		return "The user is not allowed to perform this action"
+		return "Ce compte n'est pas habilité pour effectuer cette action"
 	case "18":
-		return "This account is frozen"
+		return "Ce compte est gelé, veuillez contacter nos services pour le degel"
 	case "19":
-		return "This account is frozen"
+		return "la transaction a échoué, veuillez reessayer "
 	}
 	return "An error has occurred please try again"
 }

@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147
+	github.com/ip2location/ip2location-go/v9 v9.4.1
 	github.com/johnfercher/maroto v0.38.0
 	github.com/mailgun/mailgun-go/v4 v4.8.1
 	github.com/vektah/gqlparser/v2 v2.4.7
@@ -38,7 +39,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
-	github.com/ip2location/ip2location-go/v9 v9.4.1 // indirect
 	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect

@@ -115,7 +115,9 @@ type Paiement {
   type: PaymentType!
   creator: UserSmall
   token: String!
-  amount: Int!
+  amount: Float!
+  fee: Float
+  feeEnterprise: Float
   cancellor: UserSmall
   agency: Agency
   agencyId: String
@@ -251,7 +253,7 @@ input UserInput {
     first_name: String
     last_name: String
     photoUrl: String
-    address: String
+    keypair: Keypair
   }
 
 

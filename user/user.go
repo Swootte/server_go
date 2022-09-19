@@ -19,6 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/validator.v2"
 
@@ -87,30 +88,32 @@ func CreateUser(ctx context.Context, user *model.UserInput, uid string, ip strin
 
 	_ip := connection.IpToLocation(ip)
 	_userDb := database.NewDBUserMongo{
-		FirstName:         user.FirstName,
-		Last_name:         user.LastName,
-		Email:             user.Email,
-		Phone_number:      user.Phonenumber,
-		Adresses:          addresses,
-		FirebaseUID:       signedUser.UID,
-		CreatedAt:         _time,
-		UpdatedAt:         _time,
-		FcmToken:          *user.FcmToken,
-		PhotoUrl:          *user.PhotoURL,
-		Keypair:           database.NewKeyPair{PublicKey: address, SecretKey: secret},
-		Is_terms_accepted: true,
-		Country:           user.Country,
-		DefaultCurrency:   os.Getenv("DEFAULT_CURRENCY"),
-		User_baned:        false,
-		Birth_date:        database.BirthDate(*user.BirthDate),
-		Contacts:          make([]string, 0),
-		Permissions:       _permissions,
-		Fee:               5,
-		Is_online:         false,
-		PinCode:           string(hashedPassword),
-		InvitedBy:         *user.InvitedBy,
-		AccountFrozen:     false,
-		Deleted:           false,
+		FirstName:            user.FirstName,
+		Last_name:            user.LastName,
+		Email:                user.Email,
+		Phone_number:         user.Phonenumber,
+		Adresses:             addresses,
+		FirebaseUID:          signedUser.UID,
+		CreatedAt:            _time,
+		UpdatedAt:            _time,
+		FcmToken:             *user.FcmToken,
+		PhotoUrl:             *user.PhotoURL,
+		Keypair:              database.NewKeyPair{PublicKey: address, SecretKey: secret},
+		Is_terms_accepted:    true,
+		Country:              user.Country,
+		DefaultCurrency:      os.Getenv("DEFAULT_CURRENCY"),
+		User_baned:           false,
+		Birth_date:           database.BirthDate(*user.BirthDate),
+		Contacts:             make([]string, 0),
+		Permissions:          _permissions,
+		Fee:                  5,
+		Is_online:            false,
+		PinCode:              string(hashedPassword),
+		InvitedBy:            *user.InvitedBy,
+		AccountFrozen:        false,
+		Deleted:              false,
+		IndentityStatus:      model.IdentityStatusNotUploaded,
+		ResidenceProofStatus: model.ResidenceProofStatusNotUploaded,
 		Ip: &database.ConnectionDB{
 			IpAddress: ip,
 			CreatedAt: _time,
@@ -235,6 +238,7 @@ func beforeAllTest() {
 func LoadAllActivities(userdb *model.User) ([]*model.Paiement, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	_pipeline := bson.D{
 		{
@@ -246,7 +250,7 @@ func LoadAllActivities(userdb *model.User) ([]*model.Paiement, error) {
 	}
 
 	var payments []*model.Paiement
-	res, err := _collections.Find(ctx, _pipeline)
+	res, err := _collections.Find(ctx, _pipeline, opts)
 
 	if err != nil {
 		return nil, err

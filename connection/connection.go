@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"server/database"
 	"time"
 
@@ -35,7 +36,11 @@ func WarnOfNewConnectionOccured(ctx context.Context, ip string, deviceId string)
 }
 
 func IpToLocation(ip string) *ip2location.IP2Locationrecord {
-	db, err := ip2location.OpenDB("../IP2LOCATION-LITE-DB11.IPV6.BIN")
+	const projectDirName = "server"
+	re := regexp.MustCompile(`^(.*` + projectDirName + `)`)
+	cwd, _ := os.Getwd()
+	rootPath := re.Find([]byte(cwd))
+	db, err := ip2location.OpenDB(string(rootPath) + "/IP2LOCATION-LITE-DB11.IPV6.BIN")
 	if err != nil {
 		fmt.Println(err)
 		return nil

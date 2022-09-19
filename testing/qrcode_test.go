@@ -55,7 +55,7 @@ func TestQRCode(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, __user.GetQrOwner.FirstName, _user2.CreateUser.User.FirstName)
 		require.Equal(t, __user.GetQrOwner.LastName, _user2.CreateUser.User.LastName)
-		require.Equal(t, __user.GetQrOwner.Address, _user2.CreateUser.User.Keypair.PublicKey)
+		require.Equal(t, __user.GetQrOwner.Keypair.PublicKey, _user2.CreateUser.User.Keypair.PublicKey)
 	})
 
 	t.Run("should create another enterprise", func(t *testing.T) {

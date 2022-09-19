@@ -3,8 +3,10 @@ package notification
 import (
 	"context"
 	"log"
+	"math/big"
 	"os"
 	"server/database"
+	"server/finance"
 	snippets "server/firebase"
 	"server/graph/model"
 	"server/utils"
@@ -56,7 +58,7 @@ func SetAllNotificationToRead(ctx context.Context, userID string) (bool, error) 
 	objectId, _ := primitive.ObjectIDFromHex(userID)
 	_time := time.Now().UTC().Format(time.RFC3339)
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("notifications")
-	_, err := _collections.UpdateMany(ctx, bson.M{"to": objectId, "isRead": false}, bson.M{"isRead": true, "updatedAt": _time})
+	_, err := _collections.UpdateMany(ctx, bson.M{"to": objectId, "isRead": false}, bson.D{{Key: "$set", Value: bson.M{"isRead": true, "updatedAt": _time}}})
 	if err != nil {
 		return false, err
 	}
@@ -65,40 +67,93 @@ func SetAllNotificationToRead(ctx context.Context, userID string) (bool, error) 
 
 func SaveNotification(ctx context.Context, notification model.Notification, _to string) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("notifications")
-	_time := time.Now().UTC().Format(time.RFC3339)
 	from, _ := primitive.ObjectIDFromHex(*notification.FromID)
 	to, _ := primitive.ObjectIDFromHex(_to)
 	_notification := database.DBNotification{
+		ID:        primitive.NewObjectID(),
 		Text:      *notification.Text,
 		Type:      *notification.Type,
 		ImgUrl:    *notification.ImgURL,
 		IsRead:    false,
-		From:      from,
-		To:        to,
-		CreatedAt: _time,
+		FromId:    from,
+		ToId:      to,
+		CreatedAt: *notification.CreatedAt,
 	}
 	_collections.InsertOne(ctx, _notification)
 }
 
-func build_and_send_notification(sender string, receiver model.User, transaction model.Paiement, text_database string, text_notif string, _type string) {
+func build_and_send_notification(sender string, receiver model.User, transaction database.DBTransaction, text_database string, text_notif string, _type string) {
 	_testing, _ := strconv.ParseBool(os.Getenv("testing"))
 	if !_testing {
-		snippets.Connect().SendNotificationMEssage(_type, _type, text_notif, transaction.ID, *receiver.FcmToken)
+		snippets.Connect().SendNotificationMEssage(_type, _type, text_notif, transaction.ID.Hex(), *receiver.FcmToken)
 	}
 }
 
-func CreateDBNotification(_type model.PaymentType, sender model.User, receiver model.User, transaction model.Paiement) {
+func CreateDBNotification(_type model.PaymentType, sender model.User, receiver model.User, transaction database.DBTransaction) {
+	_amount, _ := new(big.Int).SetString(transaction.Amount, 0)
+	amountbigFloat := finance.FromWei(*_amount)
+	_time := time.Now().UTC().Format(time.RFC3339)
 	switch _type {
 	case model.PaymentTypeTopup:
-		build_and_send_notification(sender.ID, receiver, transaction, `Votre dépot d'un montant de ${transaction.amount} à bien été effectué rendez vous dans votre portefeuille pour le constater`, `Votre dépot d'un montant de ${transaction.amount} à bien été effectué rendez vous dans votre portefeuille pour le constater`, transaction.Type.String())
+		text := "Votre dépot d'un montant de" + amountbigFloat.String() + "cfa a bien été effectué rendez vous dans votre portefeuille pour le constater"
+		notif := model.Notification{
+			Text:      &text,
+			Type:      &transaction.Type,
+			ImgURL:    new(string),
+			IsRead:    new(bool),
+			FromID:    &sender.ID,
+			CreatedAt: &_time,
+		}
+		SaveNotification(context.Background(), notif, receiver.ID)
+		build_and_send_notification(sender.ID, receiver, transaction, text, text, transaction.Type)
 	case model.PaymentTypeCommerce:
-		build_and_send_notification(sender.ID, receiver, transaction, `${sender.first_name} ${sender.last_name}  vient de vous faire paiement d'un montant de ${transaction.amount} cfa`, `${sender.first_name}  ${sender.last_name}  vient de vous payer ${transaction.amount} cfa`, transaction.Type.String())
+		text := *sender.FirstName + " " + *sender.LastName + " vient de vous faire paiement d'un montant de" + amountbigFloat.String() + " cfa"
+		notif := model.Notification{
+			Text:      &text,
+			Type:      &transaction.Type,
+			ImgURL:    new(string),
+			IsRead:    new(bool),
+			FromID:    &sender.ID,
+			CreatedAt: &_time,
+		}
+		SaveNotification(context.Background(), notif, receiver.ID)
+		build_and_send_notification(sender.ID, receiver, transaction, text, text, transaction.Type)
 	case model.PaymentTypeWithdraw:
-		build_and_send_notification(sender.ID, receiver, transaction, `Votre de retrait d'un montant de ${transaction.amount} à bien été effectué`, `Votre dépot d'un montant de ${transaction.amount} à bien été effectué`, "WITHDRAW_CONFIRM_")
+		text := "Votre de retrait d'un montant de" + amountbigFloat.String() + "cfa a bien été effectué"
+		notif := model.Notification{
+			Text:      &text,
+			Type:      &transaction.Type,
+			ImgURL:    new(string),
+			IsRead:    new(bool),
+			FromID:    &sender.ID,
+			CreatedAt: &_time,
+		}
+		SaveNotification(context.Background(), notif, receiver.ID)
+		build_and_send_notification(sender.ID, receiver, transaction, text, text, "WITHDRAW_CONFIRM_")
 	case model.PaymentTypeTransfert:
-		build_and_send_notification(sender.ID, receiver, transaction, `${sender.first_name} ${sender.last_name}  vient de vous faire un transfert d'un montant de ${transaction.amount} cfa`, `${sender.first_name}  ${sender.last_name}  vient de vous envoyer ${transaction.amount} cfa`, transaction.Type.String())
+		text := *sender.FirstName + " " + *sender.LastName + " " + "vient de vous faire un transfert d'un montant de " + amountbigFloat.String() + "cfa"
+		notif := model.Notification{
+			Text:      &text,
+			Type:      &transaction.Type,
+			ImgURL:    new(string),
+			IsRead:    new(bool),
+			FromID:    &sender.ID,
+			CreatedAt: &_time,
+		}
+		build_and_send_notification(sender.ID, receiver, transaction, text, text, transaction.Type)
+		SaveNotification(context.Background(), notif, receiver.ID)
 	case model.PaymentTypePaiement:
-		build_and_send_notification(sender.ID, receiver, transaction, `${sender.first_name} ${sender.last_name}  vient de vous faire paiement d'un montant de ${transaction.amount} cfa`, `${sender.first_name}  ${sender.last_name}  vient de vous payer ${transaction.amount} cfa`, transaction.Type.String())
+		text := *sender.FirstName + " " + *sender.LastName + "  vient de vous faire paiement d'un montant de" + amountbigFloat.String() + " cfa"
+		notif := model.Notification{
+			Text:      &text,
+			Type:      &transaction.Type,
+			ImgURL:    new(string),
+			IsRead:    new(bool),
+			FromID:    &sender.ID,
+			CreatedAt: &_time,
+		}
+		SaveNotification(context.Background(), notif, receiver.ID)
+		build_and_send_notification(sender.ID, receiver, transaction, text, text, transaction.Type)
 
 	}
 }

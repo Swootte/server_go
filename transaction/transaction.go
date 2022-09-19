@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"server/finance"
+	"server/notification"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -60,13 +61,13 @@ func GetTransactionByIdAgent(ctx context.Context, transactionId string) (*model.
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(transactionId)
 
-	var payment model.Paiement
-	err := _collections.FindOne(ctx, bson.D{{Key: "_id", Value: objectId}}).Decode(payment)
+	var payment *model.Paiement
+	err := _collections.FindOne(ctx, bson.D{{Key: "_id", Value: objectId}}).Decode(&payment)
 	if err != nil {
 		return nil, err
 	}
 
-	return &payment, nil
+	return payment, nil
 }
 
 func GetTransactionByIdUnauthed(ctx context.Context, transactionId string) (*model.Paiement, error) {
@@ -87,13 +88,16 @@ func GetTransactionById(ctx context.Context, transactionId string, userId string
 	objectId, _ := primitive.ObjectIDFromHex(transactionId)
 	objectIdUser, _ := primitive.ObjectIDFromHex(userId)
 
-	var payment model.Paiement
-	err := _collections.FindOne(ctx, bson.D{{Key: "_id", Value: objectId}, {Key: "$or", Value: bson.D{{Key: "destinationUser", Value: objectIdUser}, {Key: "creator", Value: objectIdUser}}}}).Decode(payment)
+	var payment *model.Paiement
+	err := _collections.FindOne(ctx, bson.D{{Key: "_id", Value: objectId}, {Key: "$or", Value: bson.A{
+		bson.M{"destinationUserId": objectIdUser},
+		bson.M{"creatorId": objectIdUser},
+	}}}).Decode(&payment)
 	if err != nil {
 		return nil, err
 	}
 
-	return &payment, nil
+	return payment, nil
 }
 
 func CreateTransfer(ctx context.Context, address *string, token string, amount float64, destinationUser string, _user model.User, ip string) (*bool, error) {
@@ -105,7 +109,7 @@ func CreateTransfer(ctx context.Context, address *string, token string, amount f
 
 	_amount := finance.ToWei(amount)
 	fee := *finance.ToWei(finance.CalculateFee(amount))
-	receipt, err := finance.Transfer(_user.Keypair.PublicKey, payee.Keypair.PublicKey, _amount, _user.Keypair.SecretKey)
+	receipt, err := finance.Transfer(_user.Keypair.PublicKey, *address, _amount, _user.Keypair.SecretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -120,9 +124,9 @@ func CreateTransfer(ctx context.Context, address *string, token string, amount f
 		ID:                &_id,
 		TransactionId:     receipt.TxHash.String(),
 		Source:            _user.Keypair.PublicKey,
-		Destination:       payee.Keypair.PublicKey,
-		Fee:               fee.Int64(),
-		Amount:            _amount.Int64(),
+		Destination:       *address,
+		Fee:               fee.String(),
+		Amount:            _amount.String(),
 		Token:             token,
 		Description:       "",
 		DestinationUserID: &_destinationUser,
@@ -134,7 +138,7 @@ func CreateTransfer(ctx context.Context, address *string, token string, amount f
 		UpdatedAt:         _time,
 		Ip: &database.ConnectionDB{
 			IpAddress: ip,
-			CreatedAt: "",
+			CreatedAt: _time,
 			DeviceId:  "",
 			Location: database.DBLocation{
 				Longitude: _ip.Longitude,
@@ -158,6 +162,7 @@ func CreateTransfer(ctx context.Context, address *string, token string, amount f
 
 	result := true
 
+	notification.CreateDBNotification(model.PaymentTypeTransfert, _user, *payee, input)
 	return &result, nil
 }
 
@@ -180,14 +185,14 @@ func AddTopup(ctx context.Context, topup model.TopUpInput, pinCode string, payer
 		Source:            "",
 		Destination:       topup.Destination,
 		AgencyID:          &agency,
-		Fee:               big.NewInt(0).Int64(),
-		Amount:            _amount.Int64(),
-		Token:             "",
+		Fee:               big.NewInt(0).String(),
+		Amount:            _amount.String(),
+		Token:             *payerDB.DefaultCurrency,
 		Description:       "",
 		DestinationUserID: &destinationUser,
 		ShortId:           "",
 		Type:              model.PaymentTypeTopup.String(),
-		Status:            model.PaymentStatusOngoing.String(),
+		Status:            model.PaymentStatusInProgress.String(),
 		CreatorID:         &creator,
 		EnterpriseID:      nil,
 		Country:           "CG",
@@ -220,14 +225,14 @@ func AddWithdraw(ctx context.Context, withdraw model.WithdrawInput, pinCode stri
 		AgencyID:          &agency,
 		ValidatorID:       nil,
 		CancellorID:       nil,
-		Fee:               big.NewInt(0).Int64(),
-		Amount:            _amount.Int64(),
-		Token:             "",
+		Fee:               big.NewInt(0).String(),
+		Amount:            _amount.String(),
+		Token:             *payerDB.DefaultCurrency,
 		Description:       "",
 		DestinationUserID: &destinationUser,
 		ShortId:           "",
-		Type:              model.PaymentTypeTopup.String(),
-		Status:            model.PaymentStatusOngoing.String(),
+		Type:              model.PaymentTypeWithdraw.String(),
+		Status:            model.PaymentStatusInProgress.String(),
 		CreatorID:         &creator,
 		EnterpriseID:      nil,
 		Country:           "CG",
@@ -816,9 +821,9 @@ func AuthenticateForTransaction(ctx context.Context, amount float64, ref *string
 	input := database.DBTransaction{
 		ID:            &newId,
 		Destination:   enterprise.WalletPublicKey,
-		Fee:           big.NewInt(0).Int64(),
-		FeeEnterprise: toWei.Int64(),
-		Amount:        _amountToWei.Int64(),
+		Fee:           big.NewInt(0).String(),
+		FeeEnterprise: toWei.String(),
+		Amount:        _amountToWei.String(),
 		Token:         os.Getenv("DEFAULT_CURRENCY"),
 		Type:          model.PaymentTypeCommerce.String(),
 		Status:        model.PaymentStatusRequiresPaiement.String(),

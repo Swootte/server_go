@@ -203,6 +203,8 @@ type ComplexityRoot struct {
 		DestinationUser func(childComplexity int) int
 		Enterprise      func(childComplexity int) int
 		EnterpriseID    func(childComplexity int) int
+		Fee             func(childComplexity int) int
+		FeeEnterprise   func(childComplexity int) int
 		ID              func(childComplexity int) int
 		ShortID         func(childComplexity int) int
 		Status          func(childComplexity int) int
@@ -310,9 +312,9 @@ type ComplexityRoot struct {
 	}
 
 	UserSmall struct {
-		Address   func(childComplexity int) int
 		FirstName func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Keypair   func(childComplexity int) int
 		LastName  func(childComplexity int) int
 		PhotoURL  func(childComplexity int) int
 	}
@@ -371,6 +373,9 @@ type NotificationResolver interface {
 type PaiementResolver interface {
 	Creator(ctx context.Context, obj *model.Paiement) (*model.UserSmall, error)
 
+	Amount(ctx context.Context, obj *model.Paiement) (float64, error)
+	Fee(ctx context.Context, obj *model.Paiement) (*float64, error)
+	FeeEnterprise(ctx context.Context, obj *model.Paiement) (*float64, error)
 	Cancellor(ctx context.Context, obj *model.Paiement) (*model.UserSmall, error)
 	Agency(ctx context.Context, obj *model.Paiement) (*model.Agency, error)
 
@@ -1430,6 +1435,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Paiement.EnterpriseID(childComplexity), true
 
+	case "Paiement.fee":
+		if e.complexity.Paiement.Fee == nil {
+			break
+		}
+
+		return e.complexity.Paiement.Fee(childComplexity), true
+
+	case "Paiement.feeEnterprise":
+		if e.complexity.Paiement.FeeEnterprise == nil {
+			break
+		}
+
+		return e.complexity.Paiement.FeeEnterprise(childComplexity), true
+
 	case "Paiement._id":
 		if e.complexity.Paiement.ID == nil {
 			break
@@ -2126,13 +2145,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserCreated.User(childComplexity), true
 
-	case "UserSmall.address":
-		if e.complexity.UserSmall.Address == nil {
-			break
-		}
-
-		return e.complexity.UserSmall.Address(childComplexity), true
-
 	case "UserSmall.first_name":
 		if e.complexity.UserSmall.FirstName == nil {
 			break
@@ -2146,6 +2158,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UserSmall.ID(childComplexity), true
+
+	case "UserSmall.keypair":
+		if e.complexity.UserSmall.Keypair == nil {
+			break
+		}
+
+		return e.complexity.UserSmall.Keypair(childComplexity), true
 
 	case "UserSmall.last_name":
 		if e.complexity.UserSmall.LastName == nil {
@@ -2401,7 +2420,9 @@ type Paiement {
   type: PaymentType!
   creator: UserSmall
   token: String!
-  amount: Int!
+  amount: Float!
+  fee: Float
+  feeEnterprise: Float
   cancellor: UserSmall
   agency: Agency
   agencyId: String
@@ -2537,7 +2558,7 @@ input UserInput {
     first_name: String
     last_name: String
     photoUrl: String
-    address: String
+    keypair: Keypair
   }
 
 
@@ -10528,6 +10549,10 @@ func (ec *executionContext) fieldContext_Mutation_payUnConfirmedTransaction(ctx 
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -10647,6 +10672,10 @@ func (ec *executionContext) fieldContext_Mutation_payEnterprise(ctx context.Cont
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -11177,8 +11206,8 @@ func (ec *executionContext) fieldContext_Notification_from(ctx context.Context, 
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -11403,8 +11432,8 @@ func (ec *executionContext) fieldContext_Paiement_creator(ctx context.Context, f
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -11470,7 +11499,7 @@ func (ec *executionContext) _Paiement_amount(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Amount, nil
+		return ec.resolvers.Paiement().Amount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11482,19 +11511,101 @@ func (ec *executionContext) _Paiement_amount(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Paiement_amount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Paiement",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Paiement_fee(ctx context.Context, field graphql.CollectedField, obj *model.Paiement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Paiement_fee(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Paiement().Fee(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Paiement_fee(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Paiement",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Paiement_feeEnterprise(ctx context.Context, field graphql.CollectedField, obj *model.Paiement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Paiement_feeEnterprise(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Paiement().FeeEnterprise(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Paiement_feeEnterprise(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Paiement",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
@@ -11544,8 +11655,8 @@ func (ec *executionContext) fieldContext_Paiement_cancellor(ctx context.Context,
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -11739,8 +11850,8 @@ func (ec *executionContext) fieldContext_Paiement_validator(ctx context.Context,
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -12000,8 +12111,8 @@ func (ec *executionContext) fieldContext_Paiement_destinationUser(ctx context.Co
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -12871,8 +12982,8 @@ func (ec *executionContext) fieldContext_Query_searchUser(ctx context.Context, f
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -12962,8 +13073,8 @@ func (ec *executionContext) fieldContext_Query_getAllUserContact(ctx context.Con
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -13053,8 +13164,8 @@ func (ec *executionContext) fieldContext_Query_getAllContactNotAdded(ctx context
 				return ec.fieldContext_UserSmall_last_name(ctx, field)
 			case "photoUrl":
 				return ec.fieldContext_UserSmall_photoUrl(ctx, field)
-			case "address":
-				return ec.fieldContext_UserSmall_address(ctx, field)
+			case "keypair":
+				return ec.fieldContext_UserSmall_keypair(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserSmall", field.Name)
 		},
@@ -13148,6 +13259,10 @@ func (ec *executionContext) fieldContext_Query_getActivity(ctx context.Context, 
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -13463,6 +13578,10 @@ func (ec *executionContext) fieldContext_Query_retrieveAllAgenciesTransactions(c
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -13571,6 +13690,10 @@ func (ec *executionContext) fieldContext_Query_getAllParticipatingTransactions(c
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -13731,6 +13854,10 @@ func (ec *executionContext) fieldContext_Query_getTransactionByIdUnauthed(ctx co
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -13847,6 +13974,10 @@ func (ec *executionContext) fieldContext_Query_getTransactionById(ctx context.Co
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -13963,6 +14094,10 @@ func (ec *executionContext) fieldContext_Query_getTransactionByIdAgent(ctx conte
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -15562,6 +15697,10 @@ func (ec *executionContext) fieldContext_Subscription_transactionPayed(ctx conte
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -15763,6 +15902,10 @@ func (ec *executionContext) fieldContext_TransactionWithPageInfo_transactions(ct
 				return ec.fieldContext_Paiement_token(ctx, field)
 			case "amount":
 				return ec.fieldContext_Paiement_amount(ctx, field)
+			case "fee":
+				return ec.fieldContext_Paiement_fee(ctx, field)
+			case "feeEnterprise":
+				return ec.fieldContext_Paiement_feeEnterprise(ctx, field)
 			case "cancellor":
 				return ec.fieldContext_Paiement_cancellor(ctx, field)
 			case "agency":
@@ -17363,8 +17506,8 @@ func (ec *executionContext) fieldContext_UserSmall_photoUrl(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _UserSmall_address(ctx context.Context, field graphql.CollectedField, obj *model.UserSmall) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserSmall_address(ctx, field)
+func (ec *executionContext) _UserSmall_keypair(ctx context.Context, field graphql.CollectedField, obj *model.UserSmall) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserSmall_keypair(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17377,7 +17520,7 @@ func (ec *executionContext) _UserSmall_address(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Address, nil
+		return obj.Keypair, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17386,19 +17529,25 @@ func (ec *executionContext) _UserSmall_address(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.Keypair)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOKeypair2ᚖserverᚋgraphᚋmodelᚐKeypair(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserSmall_address(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserSmall_keypair(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserSmall",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "publicKey":
+				return ec.fieldContext_Keypair_publicKey(ctx, field)
+			case "secretKey":
+				return ec.fieldContext_Keypair_secretKey(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Keypair", field.Name)
 		},
 	}
 	return fc, nil
@@ -21298,12 +21447,59 @@ func (ec *executionContext) _Paiement(ctx context.Context, sel ast.SelectionSet,
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "amount":
+			field := field
 
-			out.Values[i] = ec._Paiement_amount(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Paiement_amount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "fee":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Paiement_fee(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "feeEnterprise":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Paiement_feeEnterprise(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "cancellor":
 			field := field
 
@@ -22512,9 +22708,9 @@ func (ec *executionContext) _UserSmall(ctx context.Context, sel ast.SelectionSet
 
 			out.Values[i] = ec._UserSmall_photoUrl(ctx, field, obj)
 
-		case "address":
+		case "keypair":
 
-			out.Values[i] = ec._UserSmall_address(ctx, field, obj)
+			out.Values[i] = ec._UserSmall_keypair(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
