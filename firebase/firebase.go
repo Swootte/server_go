@@ -24,7 +24,7 @@ type FirebaseApp struct {
 
 func Connect() *FirebaseApp {
 	opt := option.WithCredentialsJSON([]byte(os.Getenv("FIREBASE_SERVICE_ACCOUNT")))
-	config := &firebase.Config{ProjectID: "tinda-a9b1c", StorageBucket: "tinda-a9b1c.appspot.com"}
+	config := &firebase.Config{ProjectID: os.Getenv("FIREBASE_ID"), StorageBucket: os.Getenv("STORAGEBUCKET")}
 	app, err := firebase.NewApp(context.Background(), config, opt)
 
 	if err != nil {
