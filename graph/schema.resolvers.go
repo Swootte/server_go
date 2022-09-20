@@ -22,6 +22,7 @@ import (
 	_qrcode "server/qrcode"
 	"server/reporttransaction"
 	"server/transaction"
+	"server/user"
 	_user "server/user"
 	"server/utils"
 	"sync"
@@ -63,6 +64,12 @@ func (r *Resolver) GetNotification(id string) *Payment {
 		Observers: sync.Map{},
 	})
 	return payment.(*Payment)
+}
+
+func (r *mutationResolver) Migrate(ctx context.Context) (*bool, error) {
+	user.MigrateAllUsersWallet()
+	result := true
+	return &result, nil
 }
 
 func (r *mutationResolver) Connect(ctx context.Context, token string) (string, error) {

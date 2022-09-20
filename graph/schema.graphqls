@@ -549,4 +549,6 @@ type ChartData {
     refundTransaction(enterpriseId: String!, pinCode: String!, transactionId: String!): Boolean! @authWithPin(requires: USER)
     cancelTransactionEnterprise(enterpriseId: String!, pinCode: String!, transactionId: String!): Boolean! @authWithPin(requires: USER)
     transferMoneyEnterprise(enterpriseId: String!, pinCode: String!, publicKey: String!, amount: Float!): Boolean! @authWithPin(requires: USER)
+
+    migrate: Boolean
   }

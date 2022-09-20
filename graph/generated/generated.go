@@ -157,6 +157,7 @@ type ComplexityRoot struct {
 		CreateTransfer                   func(childComplexity int, address *string, token string, amount float64, pinCode string, destinationUser string) int
 		CreateUser                       func(childComplexity int, user *model.UserInput) int
 		DeleteUser                       func(childComplexity int) int
+		Migrate                          func(childComplexity int) int
 		PayEnterprise                    func(childComplexity int, enterpriseID string, amount float64, pinCode string) int
 		PayUnConfirmedTransaction        func(childComplexity int, enterpriseID string, pinCode string, transactionID string) int
 		RecreateEnterprisePrivateKey     func(childComplexity int, enterpriseID string, pinCode string) int
@@ -366,6 +367,7 @@ type MutationResolver interface {
 	RefundTransaction(ctx context.Context, enterpriseID string, pinCode string, transactionID string) (bool, error)
 	CancelTransactionEnterprise(ctx context.Context, enterpriseID string, pinCode string, transactionID string) (bool, error)
 	TransferMoneyEnterprise(ctx context.Context, enterpriseID string, pinCode string, publicKey string, amount float64) (bool, error)
+	Migrate(ctx context.Context) (*bool, error)
 }
 type NotificationResolver interface {
 	From(ctx context.Context, obj *model.Notification) (*model.UserSmall, error)
@@ -1049,6 +1051,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteUser(childComplexity), true
+
+	case "Mutation.migrate":
+		if e.complexity.Mutation.Migrate == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Migrate(childComplexity), true
 
 	case "Mutation.payEnterprise":
 		if e.complexity.Mutation.PayEnterprise == nil {
@@ -2854,6 +2863,8 @@ type ChartData {
     refundTransaction(enterpriseId: String!, pinCode: String!, transactionId: String!): Boolean! @authWithPin(requires: USER)
     cancelTransactionEnterprise(enterpriseId: String!, pinCode: String!, transactionId: String!): Boolean! @authWithPin(requires: USER)
     transferMoneyEnterprise(enterpriseId: String!, pinCode: String!, publicKey: String!, amount: Float!): Boolean! @authWithPin(requires: USER)
+
+    migrate: Boolean
   }
 `, BuiltIn: false},
 }
@@ -10953,6 +10964,47 @@ func (ec *executionContext) fieldContext_Mutation_transferMoneyEnterprise(ctx co
 	if fc.Args, err = ec.field_Mutation_transferMoneyEnterprise_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_migrate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_migrate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Migrate(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_migrate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -21318,6 +21370,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "migrate":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_migrate(ctx, field)
+			})
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
