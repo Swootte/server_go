@@ -7,7 +7,6 @@ import (
 	"server/dataloaders"
 	"server/middleware"
 	"server/serverutils"
-	"server/user"
 	"server/utils"
 
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -36,5 +35,4 @@ func main() {
 	router.Handle("/graphql", dataloadersSrv)
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, router))
-	user.MigrateAllUsersWallet()
 }
