@@ -156,8 +156,6 @@ func GetUserByFirebaseId(uid string) (*model.User, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("users")
 	var singleUser *model.User
 	err := _collections.FindOne(ctx, bson.D{{Key: "firebaseUID", Value: uid}}).Decode(&singleUser)
-
-	fmt.Println(singleUser, "i've found the user")
 	return singleUser, err
 }
 
