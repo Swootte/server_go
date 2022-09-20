@@ -159,6 +159,37 @@ func GetUserByFirebaseId(uid string) (*model.User, error) {
 	return singleUser, err
 }
 
+func MigrateAllUsersWallet() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("users")
+	cursor, err := _collections.Find(context.Background(), bson.M{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	for cursor.Next(ctx) {
+		var singleUser *model.User
+		if err = cursor.Decode(&singleUser); err != nil {
+			fmt.Println(err)
+		}
+		if *singleUser.Phonenumber != "+33782798614" {
+			privateKey, address, _ := finance.CreateAccount()
+			secret, err := utils.Encrypt(privateKey, os.Getenv("SERVER_SECRET"))
+			if err != nil {
+				fmt.Println(err)
+			}
+			objectId, _ := primitive.ObjectIDFromHex(singleUser.ID)
+			_collections.UpdateOne(context.Background(), bson.D{{Key: "_id", Value: objectId}}, bson.D{{Key: "$set", Value: bson.D{{Key: "keypair.publicKey", Value: address}, {Key: "keypair.secretKey", Value: secret}, {Key: "defaultCurrency", Value: os.Getenv("DEFAULT_CURRENCY")}}}})
+		} else {
+			secret, _ := utils.Encrypt(os.Getenv("CHAIN_PRIVATE_KEY"), os.Getenv("SERVER_SECRET"))
+			objectId, _ := primitive.ObjectIDFromHex(singleUser.ID)
+			_collections.UpdateOne(context.Background(), bson.D{{Key: "_id", Value: objectId}}, bson.D{{Key: "$set", Value: bson.D{{Key: "keypair.publicKey", Value: os.Getenv("CHAIN_ADDRESS")}, {Key: "keypair.secretKey", Value: secret}, {Key: "defaultCurrency", Value: os.Getenv("DEFAULT_CURRENCY")}}}})
+		}
+	}
+
+	fmt.Println("migration done")
+}
+
 func UserExist(uid string) (bool, error) {
 	res, err := GetUserByFirebaseId(uid)
 	if !*res.Deleted {
