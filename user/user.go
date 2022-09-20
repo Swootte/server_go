@@ -153,10 +153,11 @@ func CreateUser(ctx context.Context, user *model.UserInput, uid string, ip strin
 func GetUserByFirebaseId(uid string) (*model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	fmt.Println(os.Getenv("DATABASE"), "this is thee database")
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("users")
 	var singleUser *model.User
 	err := _collections.FindOne(ctx, bson.D{{Key: "firebaseUID", Value: uid}}).Decode(&singleUser)
+
+	fmt.Println(singleUser, "i've found the user")
 	return singleUser, err
 }
 
