@@ -162,6 +162,7 @@ func GetUserByFirebaseId(uid string) (*model.User, error) {
 }
 
 func MigrateAllUsersWallet() {
+	log.Printf("migration started")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("users")
@@ -169,23 +170,27 @@ func MigrateAllUsersWallet() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	fmt.Println("migration started")
 	for cursor.Next(ctx) {
 		var singleUser *model.User
 		if err = cursor.Decode(&singleUser); err != nil {
+			log.Printf("err:%s", err.Error())
 			fmt.Println(err)
 		}
 		if *singleUser.Phonenumber != "+33782798614" {
 			privateKey, address, _ := finance.CreateAccount()
 			secret, err := utils.Encrypt(privateKey, os.Getenv("SERVER_SECRET"))
 			if err != nil {
+				log.Printf("err:%s", err.Error())
 				fmt.Println(err)
 			}
 			objectId, _ := primitive.ObjectIDFromHex(singleUser.ID)
-			_collections.UpdateOne(context.Background(), bson.D{{Key: "_id", Value: objectId}}, bson.D{{Key: "$set", Value: bson.D{{Key: "keypair.publicKey", Value: address}, {Key: "keypair.secretKey", Value: secret}, {Key: "defaultCurrency", Value: os.Getenv("DEFAULT_CURRENCY")}}}})
+			_collections.UpdateOne(context.Background(), bson.D{{Key: "_id", Value: objectId}}, bson.D{{Key: "$set", Value: bson.D{{Key: "keypair.publicKey", Value: address}, {Key: "keypair.secretKey", Value: secret}, {Key: "defaultCurrency", Value: os.Getenv("DEFAULT_CURRENCY")}, {Key: "deleted", Value: false}}}})
 		} else {
 			secret, _ := utils.Encrypt(os.Getenv("CHAIN_PRIVATE_KEY"), os.Getenv("SERVER_SECRET"))
 			objectId, _ := primitive.ObjectIDFromHex(singleUser.ID)
-			_collections.UpdateOne(context.Background(), bson.D{{Key: "_id", Value: objectId}}, bson.D{{Key: "$set", Value: bson.D{{Key: "keypair.publicKey", Value: os.Getenv("CHAIN_ADDRESS")}, {Key: "keypair.secretKey", Value: secret}, {Key: "defaultCurrency", Value: os.Getenv("DEFAULT_CURRENCY")}}}})
+			_collections.UpdateOne(context.Background(), bson.D{{Key: "_id", Value: objectId}}, bson.D{{Key: "$set", Value: bson.D{{Key: "keypair.publicKey", Value: os.Getenv("CHAIN_ADDRESS")}, {Key: "keypair.secretKey", Value: secret}, {Key: "defaultCurrency", Value: os.Getenv("DEFAULT_CURRENCY")}, {Key: "deleted", Value: false}}}})
 		}
 	}
 
@@ -193,10 +198,7 @@ func MigrateAllUsersWallet() {
 }
 
 func UserExist(uid string) (bool, error) {
-	fmt.Println("i'm goin through", uid)
 	res, err := GetUserByFirebaseId(uid)
-	fmt.Println("i've found the user", res)
-	fmt.Println("i've an error?", err)
 	if res.Deleted != nil && !*res.Deleted {
 		return true, err
 	}
