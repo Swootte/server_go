@@ -195,14 +195,16 @@ func MigrateAllUsersWallet() {
 func UserExist(uid string) (bool, error) {
 	fmt.Println("i'm goin through", uid)
 	res, err := GetUserByFirebaseId(uid)
-	if !*res.Deleted {
+	fmt.Println("i've found the user", res)
+	fmt.Println("i've an error?", err)
+	if res.Deleted != nil && !*res.Deleted {
 		return true, err
 	}
 	return false, err
 }
 
 func UsersExist(userdb model.User, args interface{}) *model.User {
-	if !*userdb.Deleted {
+	if userdb.Deleted != nil && !*userdb.Deleted {
 		return &userdb
 	}
 	return nil
