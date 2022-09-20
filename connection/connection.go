@@ -40,7 +40,7 @@ func IpToLocation(ip string) *ip2location.IP2Locationrecord {
 	re := regexp.MustCompile(`^(.*` + projectDirName + `)`)
 	cwd, _ := os.Getwd()
 	rootPath := re.Find([]byte(cwd))
-	db, err := ip2location.OpenDB(string(rootPath) + "/IP2LOCATION-LITE-DB11.IPV6.BIN")
+	db, err := ip2location.OpenDB(string(rootPath) + `/` + os.Getenv("DIRNAME"))
 	if err != nil {
 		fmt.Println(err)
 		return nil

@@ -29,12 +29,12 @@ func RetrieveAllAgencies(ctx context.Context) ([]*model.Agency, error) {
 
 	var agencies []*model.Agency
 	for cursor.Next(ctx) {
-		var singleAgency model.Agency
+		var singleAgency *model.Agency
 		if err = cursor.Decode(&singleAgency); err != nil {
 			errors.SaveError(ctx, err, "34", "agency", "", "")
 			log.Fatal(err)
 		}
-		agencies = append(agencies, &singleAgency)
+		agencies = append(agencies, singleAgency)
 	}
 
 	return agencies, nil
