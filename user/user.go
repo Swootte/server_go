@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"server/connection"
 	database "server/database"
 	"server/ethereum"
 	"server/finance"
@@ -86,7 +85,6 @@ func CreateUser(ctx context.Context, user *model.UserInput, uid string, ip strin
 		Is_chosed: true,
 	})
 
-	_ip := connection.IpToLocation(ip)
 	_userDb := database.NewDBUserMongo{
 		FirstName:            user.FirstName,
 		Last_name:            user.LastName,
@@ -114,16 +112,6 @@ func CreateUser(ctx context.Context, user *model.UserInput, uid string, ip strin
 		Deleted:              false,
 		IndentityStatus:      model.IdentityStatusNotUploaded,
 		ResidenceProofStatus: model.ResidenceProofStatusNotUploaded,
-		Ip: &database.ConnectionDB{
-			IpAddress: ip,
-			CreatedAt: _time,
-			DeviceId:  "",
-			Location:  database.DBLocation{},
-			Country:   _ip.Country_long,
-			City:      _ip.City,
-			Zip:       _ip.Zipcode,
-			Region:    _ip.Region,
-		},
 	}
 
 	if errs := validator.Validate(&_userDb); errs != nil {

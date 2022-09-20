@@ -7,7 +7,6 @@ import (
 	"math"
 	"math/big"
 	"os"
-	"server/connection"
 	"server/database"
 	"server/graph/model"
 	"server/user"
@@ -119,7 +118,6 @@ func CreateTransfer(ctx context.Context, address *string, token string, amount f
 	_time := time.Now().UTC().Format(time.RFC3339)
 	_id := primitive.NewObjectID()
 
-	_ip := connection.IpToLocation(ip)
 	input := database.DBTransaction{
 		ID:                &_id,
 		TransactionId:     receipt.TxHash.String(),
@@ -136,19 +134,6 @@ func CreateTransfer(ctx context.Context, address *string, token string, amount f
 		Country:           "",
 		CreatedAt:         _time,
 		UpdatedAt:         _time,
-		Ip: &database.ConnectionDB{
-			IpAddress: ip,
-			CreatedAt: _time,
-			DeviceId:  "",
-			Location: database.DBLocation{
-				Longitude: _ip.Longitude,
-				Latitude:  _ip.Latitude,
-			},
-			Country: _ip.Country_long,
-			City:    _ip.City,
-			Zip:     _ip.Zipcode,
-			Region:  _ip.Region,
-		},
 	}
 
 	_result, err := _collections.InsertOne(ctx, input)

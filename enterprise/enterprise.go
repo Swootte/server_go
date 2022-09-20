@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"server/connection"
 	"server/database"
 	"server/graph/model"
 	"server/transaction"
@@ -295,7 +294,6 @@ func SendMoney(ctx context.Context, enterpriseId string, pinCode string, publicK
 	objectIduser, _ := primitive.ObjectIDFromHex(userID)
 	_time := time.Now().UTC().Format(time.RFC3339)
 
-	_ip := connection.IpToLocation(ip)
 	input := database.DBTransaction{
 		TransactionId: txHash,
 		Source:        enterprise.WalletPublicKey,
@@ -318,11 +316,6 @@ func SendMoney(ctx context.Context, enterpriseId string, pinCode string, publicK
 			IpAddress: ip,
 			CreatedAt: _time,
 			DeviceId:  "",
-			Location:  database.DBLocation{},
-			Country:   _ip.Country_long,
-			City:      _ip.City,
-			Zip:       _ip.Zipcode,
-			Region:    _ip.Region,
 		},
 	}
 
