@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -20,7 +21,7 @@ func Middleware() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := r.RemoteAddr
 			header := r.Header.Get("Authorization")
-
+			fmt.Println("header", header)
 			if header == "" {
 				next.ServeHTTP(w, r)
 				return
