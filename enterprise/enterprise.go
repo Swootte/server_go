@@ -201,11 +201,6 @@ func GetEnterpriseByIdWithUseriD(ctx context.Context, enterpriseId string, userI
 	if err != nil {
 		return nil, err
 	}
-
-	decrypted := utils.Ase256Decode(os.Getenv("SERVER_SECRET_KEY"), enterprise.PublishableKey)
-	decrypted2 := utils.Ase256Decode(os.Getenv("SERVER_SECRET_KEY"), enterprise.PrivateKey)
-	enterprise.PublishableKey = decrypted
-	enterprise.PrivateKey = decrypted2
 	return enterprise, nil
 }
 

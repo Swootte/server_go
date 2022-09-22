@@ -32,7 +32,9 @@ func CreatePdfFile(qrcode string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	fileID := "./" + uuid.NewString() + ".png"
+	pwd, _ := os.Getwd()
+
+	fileID := pwd + "/" + uuid.NewString() + ".png"
 
 	w, err := standard.New(fileID)
 	if err != nil {
@@ -83,14 +85,14 @@ func CreatePdfFile(qrcode string) (*bytes.Buffer, error) {
 		_pdf.Line(1)
 		_pdf.Row(13, func() {
 			_pdf.Col(10, func() {
-				_pdf.FileImage("../assets/google-play-badge.png", props.Rect{
+				_pdf.FileImage(pwd+"/assets/google-play-badge.png", props.Rect{
 					Percent: 57,
 					Left:    50,
 				})
 			})
 
 			_pdf.Col(7, func() {
-				_pdf.FileImage("../assets/Download_on_the_App_Store_Badge_FR_RGB_blk_100517.png", props.Rect{
+				_pdf.FileImage(pwd+"/assets/Download_on_the_App_Store_Badge_FR_RGB_blk_100517.png", props.Rect{
 					Percent: 39,
 					Top:     1.2,
 				})

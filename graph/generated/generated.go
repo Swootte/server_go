@@ -37,6 +37,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Enterprise() EnterpriseResolver
 	Mutation() MutationResolver
 	Notification() NotificationResolver
 	Paiement() PaiementResolver
@@ -326,6 +327,10 @@ type ComplexityRoot struct {
 	}
 }
 
+type EnterpriseResolver interface {
+	PublishableKey(ctx context.Context, obj *model.Enterprise) (string, error)
+	PrivateKey(ctx context.Context, obj *model.Enterprise) (string, error)
+}
 type MutationResolver interface {
 	Connect(ctx context.Context, token string) (string, error)
 	CreateUser(ctx context.Context, user *model.UserInput) (*model.UserCreated, error)
@@ -5979,7 +5984,7 @@ func (ec *executionContext) _Enterprise_publishableKey(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PublishableKey, nil
+		return ec.resolvers.Enterprise().PublishableKey(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6000,8 +6005,8 @@ func (ec *executionContext) fieldContext_Enterprise_publishableKey(ctx context.C
 	fc = &graphql.FieldContext{
 		Object:     "Enterprise",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -6023,7 +6028,7 @@ func (ec *executionContext) _Enterprise_private_key(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PrivateKey, nil
+		return ec.resolvers.Enterprise().PrivateKey(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6044,8 +6049,8 @@ func (ec *executionContext) fieldContext_Enterprise_private_key(ctx context.Cont
 	fc = &graphql.FieldContext{
 		Object:     "Enterprise",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -20662,7 +20667,7 @@ func (ec *executionContext) _Enterprise(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Enterprise__id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
 
@@ -20685,14 +20690,14 @@ func (ec *executionContext) _Enterprise(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Enterprise_creator(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 
 			out.Values[i] = ec._Enterprise_createdAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 
@@ -20703,28 +20708,54 @@ func (ec *executionContext) _Enterprise(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Enterprise_person(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "publishableKey":
+			field := field
 
-			out.Values[i] = ec._Enterprise_publishableKey(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Enterprise_publishableKey(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "private_key":
+			field := field
 
-			out.Values[i] = ec._Enterprise_private_key(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Enterprise_private_key(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "walletPublicKey":
 
 			out.Values[i] = ec._Enterprise_walletPublicKey(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "walletSecretKey":
 
@@ -20743,7 +20774,7 @@ func (ec *executionContext) _Enterprise(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Enterprise_default_enterprise(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 

@@ -71,35 +71,6 @@ type EmailInput struct {
 	Message string `json:"message" bson:"message"`
 }
 
-type Enterprise struct {
-	ID                   string  `json:"_id" bson:"_id"`
-	Type                 *string `json:"type" bson:"type"`
-	Name                 *string `json:"name" bson:"name"`
-	Website              *string `json:"website" bson:"website"`
-	LogoURL              *string `json:"logoUrl" bson:"logoUrl"`
-	Creator              string  `json:"creator" bson:"creator"`
-	CreatedAt            string  `json:"createdAt" bson:"createdAt"`
-	UpdatedAt            *string `json:"updatedAt" bson:"updatedAt"`
-	Person               *Person `json:"person" bson:"person"`
-	PublishableKey       string  `json:"publishableKey" bson:"publishableKey"`
-	PrivateKey           string  `json:"private_key" bson:"private_key"`
-	WalletPublicKey      string  `json:"walletPublicKey" bson:"walletPublicKey"`
-	WalletSecretKey      *string `json:"walletSecretKey" bson:"walletSecretKey"`
-	Country              *string `json:"country" bson:"country"`
-	Address              *Adress `json:"address" bson:"address"`
-	DefaultEnterprise    bool    `json:"default_enterprise" bson:"default_enterprise"`
-	Description          *string `json:"description" bson:"description"`
-	SellingPhysicalGoods *bool   `json:"sellingPhysicalGoods" bson:"sellingPhysicalGoods"`
-	SelfShippingProduct  *bool   `json:"selfShippingProduct" bson:"selfShippingProduct"`
-	ShippingDelay        *string `json:"shippingDelay" bson:"shippingDelay"`
-	TransactionLibele    *string `json:"transactionLibele" bson:"transactionLibele"`
-	AbregedLibele        *string `json:"abregedLibele" bson:"abregedLibele"`
-	Phone                *string `json:"phone" bson:"phone"`
-	Email                *string `json:"email" bson:"email"`
-	Rccm                 *string `json:"rccm" bson:"rccm"`
-	Sector               *string `json:"sector" bson:"sector"`
-}
-
 type EnterpriseInput struct {
 	Name                 string         `json:"name" bson:"name"`
 	Country              string         `json:"country" bson:"country"`

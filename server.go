@@ -12,6 +12,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
+	"github.com/rs/cors"
 )
 
 const defaultPort = "8080"
@@ -28,6 +29,12 @@ func main() {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Middleware())
+	router.Use(cors.New(cors.Options{
+		AllowedOrigins:   []string{},
+		AllowedMethods:   []string{"GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"},
+		AllowedHeaders:   []string{"Access-Control-Allow-Credentials", "Access-Control-Allow-Methods", "Access-Control-Allow-Origin", "Apollographql-Client-Name", "Authorization", "Content-Type", "Mode"},
+		AllowCredentials: true,
+	}).Handler)
 
 	router.Use(middleware.BasicAuthMiddleware())
 	srv := serverutils.StartServer()

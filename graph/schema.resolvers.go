@@ -753,12 +753,12 @@ func (r *paiementResolver) DestinationUser(ctx context.Context, obj *model.Paiem
 	return dataloaders.NewLoaders().User(ctx, *obj.DestinationUserID)
 }
 
-func (r *queryResolver) PublishableKey(ctx context.Context, obj *model.Enterprise) (string, error) {
-	return utils.Ase256Decode(os.Getenv("SERVER_SECRET_KEY"), *obj.WalletSecretKey), nil
+func (r *enterpriseResolver) PublishableKey(ctx context.Context, obj *model.Enterprise) (string, error) {
+	return utils.Ase256Decode(os.Getenv("SERVER_SECRET_KEY"), obj.PublishableKeyString), nil
 }
 
-func (r *queryResolver) Private_key(ctx context.Context, obj *model.Enterprise) (string, error) {
-	return utils.Ase256Decode(os.Getenv("SERVER_SECRET_KEY"), *obj.WalletSecretKey), nil
+func (r *enterpriseResolver) PrivateKey(ctx context.Context, obj *model.Enterprise) (string, error) {
+	return utils.Ase256Decode(os.Getenv("SERVER_SECRET_KEY"), obj.PrivateKeystring), nil
 }
 
 // NotificationAdded is the resolver for the notificationAdded field.
@@ -802,8 +802,11 @@ func (r *Resolver) Paiement() generated.PaiementResolver { return &paiementResol
 
 func (r *Resolver) Notification() generated.NotificationResolver { return &notificationResolver{r} }
 
+func (r *Resolver) Enterprise() generated.EnterpriseResolver { return &enterpriseResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type paiementResolver struct{ *Resolver }
 type notificationResolver struct{ *Resolver }
+type enterpriseResolver struct{ *Resolver }
