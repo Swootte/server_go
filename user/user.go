@@ -38,7 +38,7 @@ func CreateUser(ctx context.Context, user *model.UserInput, uid string, ip strin
 		fmt.Println(err)
 	}
 
-	photourl := "https://firebasestorage.googleapis.com/v0/b/swoosh-97759.appspot.com/o/tinda_swootte_logo.png?alt=media&token=ba9ff652-78e6-4984-b0b7-2dd5d4503f3b"
+	photourl := "https://www.pngitem.com/pimgs/m/146-1468479_my-profile-icon-blank-profile-picture-circle-hd.png"
 	user.PhotoURL = &photourl
 
 	// fbToken := fb.Connect().VerifyIdToken(ctx, user.Token)
@@ -185,6 +185,9 @@ func MigrateAllUsersWallet() {
 
 func UserExist(uid string) (bool, error) {
 	res, err := GetUserByFirebaseId(uid)
+	if err != nil && err == mongo.ErrNoDocuments {
+		return false, nil
+	}
 	if res.Deleted != nil && !*res.Deleted {
 		return true, err
 	}

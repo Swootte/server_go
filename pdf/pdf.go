@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/johnfercher/maroto/pkg/color"
@@ -26,7 +27,7 @@ func toBase64(filename string) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-func CreatePdfFile(qrcode string) (*bytes.Buffer, error) {
+func CreatePdfFile(qrcode string, enterpriseName string) (*bytes.Buffer, error) {
 	qrc, err := qr.NewWith(qrcode)
 	if err != nil {
 		return nil, err
@@ -44,6 +45,10 @@ func CreatePdfFile(qrcode string) (*bytes.Buffer, error) {
 	qrc.Save(w)
 
 	bFile := toBase64(fileID)
+	androidImage := toBase64(pwd + "/assets/google-play-badge.jpg")
+	iosImage := toBase64(pwd + "/assets/Download_on_the_App_Store_Badge_FR_RGB_blk_100517.jpg")
+
+	LogoImage := toBase64(pwd + "/assets/swootte.jpg")
 
 	_pdf := pdf.NewMarotoCustomSize(consts.Portrait, "A6", "mm", 105.0, 148.0)
 	redColor := color.Color{
@@ -55,7 +60,7 @@ func CreatePdfFile(qrcode string) (*bytes.Buffer, error) {
 		_pdf.Row(25, func() {
 			_pdf.Col(13, func() {
 				_pdf.SetBackgroundColor(redColor)
-				_pdf.Text("HEADER", props.Text{
+				_pdf.Text("Payez "+strings.ToTitle(enterpriseName)+" avec Tinda", props.Text{
 					Size: 10,
 				})
 			})
@@ -76,7 +81,7 @@ func CreatePdfFile(qrcode string) (*bytes.Buffer, error) {
 	})
 
 	_pdf.Row(5, func() {
-		_pdf.Barcode(qrcode, props.Barcode{
+		_pdf.Base64Image(LogoImage, consts.Jpg, props.Rect{
 			Center: true,
 		})
 	})
@@ -85,14 +90,14 @@ func CreatePdfFile(qrcode string) (*bytes.Buffer, error) {
 		_pdf.Line(1)
 		_pdf.Row(13, func() {
 			_pdf.Col(10, func() {
-				_pdf.FileImage(pwd+"/assets/google-play-badge.png", props.Rect{
+				_pdf.Base64Image(androidImage, consts.Jpg, props.Rect{
 					Percent: 57,
 					Left:    50,
 				})
 			})
 
 			_pdf.Col(7, func() {
-				_pdf.FileImage(pwd+"/assets/Download_on_the_App_Store_Badge_FR_RGB_blk_100517.png", props.Rect{
+				_pdf.Base64Image(iosImage, consts.Jpg, props.Rect{
 					Percent: 39,
 					Top:     1.2,
 				})

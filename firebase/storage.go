@@ -40,3 +40,21 @@ func (firebase *FirebaseApp) UploadFile(fileInput []byte, filename string) (stri
 	})
 
 }
+
+func (firebase *FirebaseApp) GetLinkFromFileName(filename string) (string, error) {
+	client, err := firebase.app.Storage(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	bucket, err := client.DefaultBucket()
+	if err != nil {
+		return "", err
+	}
+
+	return bucket.SignedURL(filename, &storage.SignedURLOptions{
+		Scheme:  storage.SigningSchemeV4,
+		Method:  "GET",
+		Expires: time.Now().Add(15 * time.Hour),
+	})
+}

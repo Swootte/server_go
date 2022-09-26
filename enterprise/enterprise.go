@@ -44,7 +44,7 @@ func CreateEnterprise(ctx context.Context, enterprise model.EnterpriseInput, own
 		return nil, err
 	}
 
-	bytes, err := pdf.CreatePdfFile(publicKey)
+	bytes, err := pdf.CreatePdfFile(publicKey, enterprise.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func CreateEnterprise(ctx context.Context, enterprise model.EnterpriseInput, own
 		Name:            enterprise.Name,
 		Rccm:            enterprise.Rccm,
 		Website:         *enterprise.Website,
-		LogoUrl:         *enterprise.LogoURL,
+		LogoUrl:         "https://www.pngitem.com/pimgs/m/146-1468479_my-profile-icon-blank-profile-picture-circle-hd.png",
 		Creator:         objectId,
 		CreatedAt:       _time,
 		UpdatedAt:       _time,
@@ -135,9 +135,6 @@ func bulkDefaultEnterpriseToFalse(ctx context.Context, userId string) (bool, err
 }
 
 func GetAllEnterpriseForAUser(ctx context.Context, userId string) ([]*model.Enterprise, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("entreprises")
 	objectId, _ := primitive.ObjectIDFromHex(userId)
 
@@ -149,7 +146,7 @@ func GetAllEnterpriseForAUser(ctx context.Context, userId string) ([]*model.Ente
 	}
 
 	var enterprises []*model.Enterprise
-	defer cursor.Close(ctx)
+
 	for cursor.Next(ctx) {
 		var singleEnterprise *model.Enterprise
 		if err = cursor.Decode(&singleEnterprise); err != nil {
@@ -159,7 +156,6 @@ func GetAllEnterpriseForAUser(ctx context.Context, userId string) ([]*model.Ente
 	}
 
 	return enterprises, nil
-
 }
 
 func ChangeDefaultEnterprise(ctx context.Context, enterpriseId, userId string, ip string) ([]*model.Enterprise, error) {
@@ -575,16 +571,11 @@ func RefundTransaction(ctx context.Context, enterpriseId string, transactionID s
 	return &_result, nil
 }
 
-func GetEnterprisePDF(ctx context.Context, enterpriseId string) (string, error) {
+func GetEnterprisePDF(ctx context.Context, enterpriseId string, user model.User) (string, error) {
 	enterprise, err := GetEnterpriseById(ctx, enterpriseId)
 	if err != nil {
 		return "", err
 	}
-	pdf, err := pdf.CreatePdfFile(enterprise.WalletPublicKey)
-	if err != nil {
-		return "", err
-	}
 
-	output := pdf.String()
-	return output, nil
+	return snippets.Connect().GetLinkFromFileName("enterprises/" + *user.FirebaseUID + "/" + enterprise.WalletPublicKey + ".pdf")
 }

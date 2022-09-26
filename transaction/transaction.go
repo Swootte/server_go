@@ -231,11 +231,13 @@ func AddWithdraw(ctx context.Context, withdraw model.WithdrawInput, pinCode stri
 func GetAllTransactionByEnterpriseId(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
-	objectIdUser, _ := primitive.ObjectIDFromHex(userId)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: ""}, {Key: "$lte", Value: ""}}}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}}}}
 	_limit := bson.D{{Key: "$limit", Value: limit}}
 	_skip := bson.D{{Key: "$skip", Value: limit * skip}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _limit, _skip})
 	if err != nil {
@@ -251,11 +253,11 @@ func GetAllTransactionByEnterpriseId(ctx context.Context, enterpriseID string, f
 		paiements = append(paiements, singlePaiement)
 	}
 
-	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}})
+	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}})
 	if err != nil {
 		return nil, err
 	}
-	_count := float64(count)
+	_count := float64(count) / limit
 	output := model.TransactionWithPageInfo{
 		Transactions: paiements,
 		PageTotal:    &_count,
@@ -287,14 +289,16 @@ func CancelTransactionUser(ctx context.Context, transactionID string, typeArg mo
 	return true, nil
 }
 
-func GetSuccessFullTransactionByEnterpriseId(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
+func GetSuccessFullTransactionByEnterpriseId(enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
-	objectIdUser, _ := primitive.ObjectIDFromHex(userId)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone}}}}
 	_limit := bson.D{{Key: "$limit", Value: limit}}
 	_skip := bson.D{{Key: "$skip", Value: limit * skip}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _limit, _skip})
 	if err != nil {
@@ -311,7 +315,7 @@ func GetSuccessFullTransactionByEnterpriseId(ctx context.Context, enterpriseID s
 		paiements = append(paiements, singlePaiement)
 	}
 
-	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone}})
+	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone.String()}})
 	if err != nil {
 		return nil, err
 	}
@@ -325,14 +329,16 @@ func GetSuccessFullTransactionByEnterpriseId(ctx context.Context, enterpriseID s
 	return &output, nil
 }
 
-func GetRefundedTransactionByEnterpriseId(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
+func GetRefundedTransactionByEnterpriseId(enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
-	objectIdUser, _ := primitive.ObjectIDFromHex(userId)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusRefunded}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusRefunded.String()}}}}
 	_limit := bson.D{{Key: "$limit", Value: limit}}
 	_skip := bson.D{{Key: "$skip", Value: limit * skip}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _limit, _skip})
 	if err != nil {
@@ -349,11 +355,11 @@ func GetRefundedTransactionByEnterpriseId(ctx context.Context, enterpriseID stri
 		paiements = append(paiements, singlePaiement)
 	}
 
-	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusRefunded}})
+	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusRefunded}})
 	if err != nil {
 		return nil, err
 	}
-	_count := float64(count)
+	_count := float64(count) / limit
 	output := model.TransactionWithPageInfo{
 		Transactions: paiements,
 		PageTotal:    &_count,
@@ -362,14 +368,16 @@ func GetRefundedTransactionByEnterpriseId(ctx context.Context, enterpriseID stri
 	return &output, nil
 }
 
-func GetNonCapturedTransactionByEnterpriseId(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
+func GetNonCapturedTransactionByEnterpriseId(enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
-	objectIdUser, _ := primitive.ObjectIDFromHex(userId)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "$or", Value: bson.A{bson.D{{Key: "status", Value: model.PaymentStatusRequiresAction}, {Key: "status", Value: model.PaymentStatusRequiresConfirmation}, {Key: "status", Value: model.PaymentStatusRequiresPaiement}, {Key: "status", Value: model.PaymentStatusOngoing}}}}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "$or", Value: bson.A{bson.D{{Key: "status", Value: model.PaymentStatusRequiresAction.String()}, {Key: "status", Value: model.PaymentStatusRequiresConfirmation.String()}, {Key: "status", Value: model.PaymentStatusRequiresPaiement.String()}, {Key: "status", Value: model.PaymentStatusOngoing.String()}}}}}}}
 	_limit := bson.D{{Key: "$limit", Value: limit}}
 	_skip := bson.D{{Key: "$skip", Value: limit * skip}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _limit, _skip})
 	if err != nil {
@@ -385,11 +393,11 @@ func GetNonCapturedTransactionByEnterpriseId(ctx context.Context, enterpriseID s
 		paiements = append(paiements, singlePaiement)
 	}
 
-	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "$or", Value: bson.A{bson.D{{Key: "status", Value: model.PaymentStatusRequiresAction}, {Key: "status", Value: model.PaymentStatusRequiresConfirmation}, {Key: "status", Value: model.PaymentStatusRequiresPaiement}, {Key: "status", Value: model.PaymentStatusOngoing}}}}})
+	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "$or", Value: bson.A{bson.D{{Key: "status", Value: model.PaymentStatusRequiresAction.String()}, {Key: "status", Value: model.PaymentStatusRequiresConfirmation.String()}, {Key: "status", Value: model.PaymentStatusRequiresPaiement.String()}, {Key: "status", Value: model.PaymentStatusOngoing.String()}}}}})
 	if err != nil {
 		return nil, err
 	}
-	_count := float64(count)
+	_count := float64(count) / limit
 	output := model.TransactionWithPageInfo{
 		Transactions: paiements,
 		PageTotal:    &_count,
@@ -398,14 +406,16 @@ func GetNonCapturedTransactionByEnterpriseId(ctx context.Context, enterpriseID s
 	return &output, nil
 }
 
-func GetFailedTransactionByEnterpriseId(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
+func GetFailedTransactionByEnterpriseId(enterpriseID string, from string, to string, limit float64, skip float64, userId string) (*model.TransactionWithPageInfo, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
-	objectIdUser, _ := primitive.ObjectIDFromHex(userId)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusFailed}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusFailed.String()}}}}
 	_limit := bson.D{{Key: "$limit", Value: limit}}
 	_skip := bson.D{{Key: "$skip", Value: limit * skip}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _limit, _skip})
 	if err != nil {
@@ -421,11 +431,11 @@ func GetFailedTransactionByEnterpriseId(ctx context.Context, enterpriseID string
 		paiements = append(paiements, singlePaiement)
 	}
 
-	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterprise", Value: objectId}, {Key: "creator", Value: objectIdUser}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: ""}, {Key: "$lte", Value: ""}}}, {Key: "status", Value: model.PaymentStatusFailed}})
+	count, err := _collections.CountDocuments(ctx, bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: ""}, {Key: "$lte", Value: ""}}}, {Key: "status", Value: model.PaymentStatusFailed.String()}})
 	if err != nil {
 		return nil, err
 	}
-	_count := float64(count)
+	_count := float64(count) / limit
 	output := model.TransactionWithPageInfo{
 		Transactions: paiements,
 		PageTotal:    &_count,
@@ -434,7 +444,11 @@ func GetFailedTransactionByEnterpriseId(ctx context.Context, enterpriseID string
 	return &output, nil
 }
 
-func buildChartDataWithArrayStatus(ctx context.Context, enterpriseID string, from string, to string, paiements []bson.M) []*float64 {
+func buildChartDataWithArrayStatus(enterpriseID string, from string, to string, paiements []bson.M) []*float64 {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	var data []*float64
 	if len(paiements) > 0 {
@@ -451,7 +465,7 @@ func buildChartDataWithArrayStatus(ctx context.Context, enterpriseID string, fro
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
 	for i := 0; i <= 5; i++ {
 		sub := _from.Add(-_from.Sub(_to))
-		_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: _from.UTC().Format(time.RFC3339)}}}, {Key: "status", Value: bson.A{model.PaymentStatusRequiresConfirmation.String(), model.PaymentStatusRequiresAction.String(), model.PaymentStatusRequiresPaiement.String()}}}}}
+		_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: _from.UTC().Format(time.RFC3339)}}}, {Key: "status", Value: bson.A{model.PaymentStatusRequiresConfirmation.String(), model.PaymentStatusRequiresAction.String(), model.PaymentStatusRequiresPaiement.String()}}}}}
 		_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toInt", Value: "$amount"}}}}}}}}
 		cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _group})
 		if err != nil {
@@ -480,7 +494,9 @@ func buildChartDataWithArrayStatus(ctx context.Context, enterpriseID string, fro
 
 }
 
-func buildChartData(ctx context.Context, enterpriseID string, from string, to string, paiements []bson.M) []*float64 {
+func buildChartDataNet(enterpriseID string, from string, to string, paiements []bson.M) []*float64 {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	var data []*float64
 	if len(paiements) > 0 {
@@ -497,8 +513,54 @@ func buildChartData(ctx context.Context, enterpriseID string, from string, to st
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
 	for i := 0; i <= 5; i++ {
 		sub := _from.Add(-_from.Sub(_to))
-		_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: _from.UTC().Format(time.RFC3339)}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
-		_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toInt", Value: "$amount"}}}}}}}}
+		_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: _from.UTC().Format(time.RFC3339)}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
+		_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toDouble", Value: bson.D{{Key: "$subtract", Value: bson.A{"$amount", "$feeEnterprise"}}}}}}}}}}}
+		cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _group})
+		if err != nil {
+			log.Fatal(err)
+		}
+		var results []bson.M
+		for cursor.Next(ctx) {
+			var singlePaiement *bson.M
+			if err = cursor.Decode(&singlePaiement); err != nil {
+				log.Fatal(err)
+			}
+			results = append(results, *singlePaiement)
+		}
+
+		if len(results) > 0 {
+			total := results[0]["total"].(float64)
+			data = append(data, &total)
+		} else {
+			f := float64(0)
+			data = append(data, &f)
+		}
+		_from = sub
+	}
+	return data
+}
+
+func buildChartData(enterpriseID string, from string, to string, paiements []bson.M) []*float64 {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
+	var data []*float64
+	if len(paiements) > 0 {
+		total := paiements[0]["total"].(float64)
+		data = append(data, &total)
+	} else {
+		f := float64(0)
+		data = append(data, &f)
+	}
+
+	date, _ := time.Parse(time.RFC3339, from)
+	_from := date
+	_to, _ := time.Parse(time.RFC3339, to)
+	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
+	for i := 0; i <= 5; i++ {
+		sub := _from.Add(-_from.Sub(_to))
+		_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: _from.UTC().Format(time.RFC3339)}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
+		_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toDouble", Value: "$amount"}}}}}}}}
 		cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _group})
 		if err != nil {
 			log.Fatal(err)
@@ -546,12 +608,16 @@ func diffPercent(current float64, former float64) *float64 {
 
 }
 
-func GetProfilNetChartData(ctx context.Context, enterpriseID string, from string, to string, userId string) (*model.ChartData, error) {
+func GetProfilNetChartData(enterpriseID string, from string, to string, userId string) (*model.ChartData, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
 	_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toDouble", Value: "$amount"}}}}}}}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _group})
 	if err != nil {
 		return nil, err
@@ -568,7 +634,7 @@ func GetProfilNetChartData(ctx context.Context, enterpriseID string, from string
 	_from, _ := time.Parse(time.RFC3339, from)
 	_to, _ := time.Parse(time.RFC3339, to)
 	sub := _from.Add(-_from.Sub(_to))
-	_match_2 := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: from}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
+	_match_2 := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: from}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
 	_group_2 := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toDouble", Value: "$amount"}}}}}}}}
 	cursor_2, err := _collections.Aggregate(ctx, mongo.Pipeline{_match_2, _group_2})
 	if err != nil {
@@ -583,7 +649,7 @@ func GetProfilNetChartData(ctx context.Context, enterpriseID string, from string
 		_lastperiodTotal = append(_lastperiodTotal, *singlePaiement)
 	}
 
-	chart := buildChartData(ctx, enterpriseID, from, to, _currentTotal)
+	chart := buildChartDataNet(enterpriseID, from, to, _currentTotal)
 	var current float64
 	if len(_currentTotal) > 0 {
 		current = _currentTotal[0]["total"].(float64)
@@ -613,9 +679,16 @@ func GetProfilNetChartData(ctx context.Context, enterpriseID string, from string
 	}
 
 	_diff := math.Abs(*diff)
+
+	currentTotalFromWeiBig := finance.FromWeiFloat(current)
+	currentTotalFromWeifloat, _ := currentTotalFromWeiBig.Float64()
+
+	formerFromWeiBig := finance.FromWeiFloat(former)
+	formerFromWeifloat, _ := formerFromWeiBig.Float64()
+
 	output := model.ChartData{
-		CurrentTotal:          &current,
-		FormerTotal:           &former,
+		CurrentTotal:          &currentTotalFromWeifloat,
+		FormerTotal:           &formerFromWeifloat,
 		PourcentageDifference: &_diff,
 		IsPositive:            &sign,
 		Chart:                 reverseFloats(chart),
@@ -624,12 +697,16 @@ func GetProfilNetChartData(ctx context.Context, enterpriseID string, from string
 	return &output, nil
 }
 
-func GetProfilBrutChartData(ctx context.Context, enterpriseID string, from string, to string, userId string) (*model.ChartData, error) {
+func GetProfilBrutChartData(enterpriseID string, from string, to string, userId string) (*model.ChartData, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
-	_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toInt", Value: "$amount"}}}}}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
+	_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toDouble", Value: "$amount"}}}}}}}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _group})
 	if err != nil {
 		return nil, err
@@ -652,8 +729,8 @@ func GetProfilBrutChartData(ctx context.Context, enterpriseID string, from strin
 		return nil, err
 	}
 	sub := _from.Add(-_from.Sub(_to))
-	_match_2 := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: from}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
-	_group_2 := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toInt", Value: "$amount"}}}}}}}}
+	_match_2 := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: from}}}, {Key: "status", Value: model.PaymentStatusDone.String()}}}}
+	_group_2 := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toDouble", Value: "$amount"}}}}}}}}
 	cursor_2, err := _collections.Aggregate(ctx, mongo.Pipeline{_match_2, _group_2})
 	if err != nil {
 		return nil, err
@@ -667,7 +744,7 @@ func GetProfilBrutChartData(ctx context.Context, enterpriseID string, from strin
 		_lastperiodTotal = append(_lastperiodTotal, *singlePaiement)
 	}
 
-	chart := buildChartData(ctx, enterpriseID, from, to, _currentTotal)
+	chart := buildChartData(enterpriseID, from, to, _currentTotal)
 	var current float64
 	if len(_currentTotal) > 0 {
 		current = _currentTotal[0]["total"].(float64)
@@ -697,9 +774,16 @@ func GetProfilBrutChartData(ctx context.Context, enterpriseID string, from strin
 	}
 
 	_diff := math.Abs(*diff)
+
+	currentTotalFromWeiBig := finance.FromWeiFloat(current)
+	currentTotalFromWeifloat, _ := currentTotalFromWeiBig.Float64()
+
+	formerFromWeiBig := finance.FromWeiFloat(former)
+	formerFromWeifloat, _ := formerFromWeiBig.Float64()
+
 	output := model.ChartData{
-		CurrentTotal:          &current,
-		FormerTotal:           &former,
+		CurrentTotal:          &currentTotalFromWeifloat,
+		FormerTotal:           &formerFromWeifloat,
 		PourcentageDifference: &_diff,
 		IsPositive:            &sign,
 		Chart:                 reverseFloats(chart),
@@ -709,12 +793,16 @@ func GetProfilBrutChartData(ctx context.Context, enterpriseID string, from strin
 
 }
 
-func GetProfilNonCarpturedChartData(ctx context.Context, enterpriseID string, from string, to string, userId string) (*model.ChartData, error) {
+func GetProfilNonCarpturedChartData(enterpriseID string, from string, to string, userId string) (*model.ChartData, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("transactions")
 	objectId, _ := primitive.ObjectIDFromHex(enterpriseID)
 
-	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: bson.A{model.PaymentStatusRequiresConfirmation.String(), model.PaymentStatusRequiresAction.String(), model.PaymentStatusRequiresPaiement.String()}}}}}
+	_match := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: from}, {Key: "$lte", Value: to}}}, {Key: "status", Value: bson.A{model.PaymentStatusRequiresConfirmation.String(), model.PaymentStatusRequiresAction.String(), model.PaymentStatusRequiresPaiement.String()}}}}}
 	_group := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toInt", Value: "$amount"}}}}}}}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	cursor, err := _collections.Aggregate(ctx, mongo.Pipeline{_match, _group})
 	if err != nil {
 		return nil, err
@@ -737,7 +825,7 @@ func GetProfilNonCarpturedChartData(ctx context.Context, enterpriseID string, fr
 		return nil, err
 	}
 	sub := _from.Add(-_from.Sub(_to))
-	_match_2 := bson.D{{Key: "$match", Value: bson.D{{Key: "enterprise", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: from}}}, {Key: "status", Value: bson.A{model.PaymentStatusRequiresConfirmation.String(), model.PaymentStatusRequiresAction.String(), model.PaymentStatusRequiresPaiement.String()}}}}}
+	_match_2 := bson.D{{Key: "$match", Value: bson.D{{Key: "enterpriseId", Value: objectId}, {Key: "createdAt", Value: bson.D{{Key: "$gte", Value: sub.UTC().Format(time.RFC3339)}, {Key: "$lte", Value: from}}}, {Key: "status", Value: bson.A{model.PaymentStatusRequiresConfirmation.String(), model.PaymentStatusRequiresAction.String(), model.PaymentStatusRequiresPaiement.String()}}}}}
 	_group_2 := bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$toInt", Value: "$amount"}}}}}}}}
 	cursor_2, err := _collections.Aggregate(ctx, mongo.Pipeline{_match_2, _group_2})
 	if err != nil {
@@ -752,7 +840,7 @@ func GetProfilNonCarpturedChartData(ctx context.Context, enterpriseID string, fr
 		_lastperiodTotal = append(_lastperiodTotal, *singlePaiement)
 	}
 
-	chart := buildChartDataWithArrayStatus(ctx, enterpriseID, from, to, _currentTotal)
+	chart := buildChartDataWithArrayStatus(enterpriseID, from, to, _currentTotal)
 	var current float64
 	if len(_currentTotal) > 0 {
 		current = _currentTotal[0]["total"].(float64)
@@ -782,9 +870,15 @@ func GetProfilNonCarpturedChartData(ctx context.Context, enterpriseID string, fr
 	}
 
 	_diff := math.Abs(*diff)
+	currentTotalFromWeiBig := finance.FromWeiFloat(current)
+	currentTotalFromWeifloat, _ := currentTotalFromWeiBig.Float64()
+
+	formerFromWeiBig := finance.FromWeiFloat(former)
+	formerFromWeifloat, _ := formerFromWeiBig.Float64()
+
 	output := model.ChartData{
-		CurrentTotal:          &current,
-		FormerTotal:           &former,
+		CurrentTotal:          &currentTotalFromWeifloat,
+		FormerTotal:           &formerFromWeifloat,
 		PourcentageDifference: &_diff,
 		IsPositive:            &sign,
 		Chart:                 reverseFloats(chart),

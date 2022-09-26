@@ -48,6 +48,13 @@ func FromWei(amount big.Int) *big.Float {
 	return new(big.Float).Quo(fbalance, big.NewFloat(math.Pow10(int(decimals))))
 }
 
+func FromWeiFloat(amount float64) *big.Float {
+	decimals, _ := FCFAIntance.Decimals(nil)
+	fbalance := new(big.Float)
+	fbalance.SetFloat64(amount)
+	return new(big.Float).Quo(fbalance, big.NewFloat(math.Pow10(int(decimals))))
+}
+
 func ToWei(amount float64) *big.Int {
 	decimals, _ := FCFAIntance.Decimals(nil)
 	fbalance := big.NewFloat(amount)

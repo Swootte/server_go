@@ -617,49 +617,49 @@ func (r *queryResolver) GetAllTransactionByEnterpriseID(ctx context.Context, ent
 func (r *queryResolver) GetSuccessFullTransactionByEnterpriseID(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64) (*model.TransactionWithPageInfo, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
-	return transaction.GetSuccessFullTransactionByEnterpriseId(ctx, enterpriseID, from, to, limit, skip, x.ID)
+	return transaction.GetSuccessFullTransactionByEnterpriseId(enterpriseID, from, to, limit, skip, x.ID)
 }
 
 // GetRefundedTransactionByEnterpriseID is the resolver for the getRefundedTransactionByEnterpriseId field.
 func (r *queryResolver) GetRefundedTransactionByEnterpriseID(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64) (*model.TransactionWithPageInfo, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
-	return transaction.GetRefundedTransactionByEnterpriseId(ctx, enterpriseID, from, to, limit, skip, x.ID)
+	return transaction.GetRefundedTransactionByEnterpriseId(enterpriseID, from, to, limit, skip, x.ID)
 }
 
 // GetNonCapturedTransactionByEnterpriseID is the resolver for the getNonCapturedTransactionByEnterpriseId field.
 func (r *queryResolver) GetNonCapturedTransactionByEnterpriseID(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64) (*model.TransactionWithPageInfo, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
-	return transaction.GetNonCapturedTransactionByEnterpriseId(ctx, enterpriseID, from, to, limit, skip, x.ID)
+	return transaction.GetNonCapturedTransactionByEnterpriseId(enterpriseID, from, to, limit, skip, x.ID)
 }
 
 // GetFailedTransactionByEnterpriseID is the resolver for the getFailedTransactionByEnterpriseId field.
 func (r *queryResolver) GetFailedTransactionByEnterpriseID(ctx context.Context, enterpriseID string, from string, to string, limit float64, skip float64) (*model.TransactionWithPageInfo, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
-	return transaction.GetFailedTransactionByEnterpriseId(ctx, enterpriseID, from, to, limit, skip, x.ID)
+	return transaction.GetFailedTransactionByEnterpriseId(enterpriseID, from, to, limit, skip, x.ID)
 }
 
 // GetProfilNetChartData is the resolver for the getProfilNetChartData field.
 func (r *queryResolver) GetProfilNetChartData(ctx context.Context, enterpriseID string, from string, to string) (*model.ChartData, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
-	return transaction.GetProfilNetChartData(ctx, enterpriseID, from, to, x.ID)
+	return transaction.GetProfilNetChartData(enterpriseID, from, to, x.ID)
 }
 
 // GetProfilBrutChartData is the resolver for the getProfilBrutChartData field.
 func (r *queryResolver) GetProfilBrutChartData(ctx context.Context, enterpriseID string, from string, to string) (*model.ChartData, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
-	return transaction.GetProfilBrutChartData(ctx, enterpriseID, from, to, x.ID)
+	return transaction.GetProfilBrutChartData(enterpriseID, from, to, x.ID)
 }
 
 // GetProfilNonCarpturedChartData is the resolver for the getProfilNonCarpturedChartData field.
 func (r *queryResolver) GetProfilNonCarpturedChartData(ctx context.Context, enterpriseID string, from string, to string) (*model.ChartData, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
-	return transaction.GetProfilNonCarpturedChartData(ctx, enterpriseID, from, to, x.ID)
+	return transaction.GetProfilNonCarpturedChartData(enterpriseID, from, to, x.ID)
 }
 
 // GetEnterpriseBalance is the resolver for the getEnterpriseBalance field.
@@ -677,7 +677,9 @@ func (r *queryResolver) GetEntrepriseByID(ctx context.Context, enterpriseID stri
 
 // GetPDF is the resolver for the getPdf field.
 func (r *queryResolver) GetPDF(ctx context.Context, enterpriseID string) (string, error) {
-	pdf, err := _enterprise.GetEnterprisePDF(ctx, enterpriseID)
+	key := utils.UserCtxKey
+	x := utils.ForContextDBUser(ctx, key)
+	pdf, err := _enterprise.GetEnterprisePDF(ctx, enterpriseID, *x)
 	return pdf, err
 }
 
