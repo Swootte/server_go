@@ -2,7 +2,6 @@ package testing
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"server/agency"
 	"server/agent"
@@ -163,7 +162,6 @@ func TestTransaction(t *testing.T) {
 		_transactions, err := transaction.LoadAllUserTransactionTest(c, options, idToken)
 		require.Nil(t, err)
 		require.NotEmpty(t, _transactions.GetActivity)
-		fmt.Println(_transactions.GetActivity[0])
 	})
 
 }

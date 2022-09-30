@@ -14,6 +14,11 @@ type DBPerson struct {
 	State      string `validate:"nonzero" bson:"state"`
 }
 
+type DBPhone struct {
+	DialCode string `validate:"nonzero" bson:"dial_code"`
+	Phone    string `validate:"nonzero" bson:"phone"`
+}
+
 type DBEnterprise struct {
 	Type                 string             `validate:"nonzero" bson:"type"`
 	Name                 string             `validate:"nonzero" bson:"name"`
@@ -37,7 +42,7 @@ type DBEnterprise struct {
 	SellingPhysicalGoods bool               `validate:"nonzero" bson:"sellingPhysicalGoods"`
 	TransactionLibele    string             `validate:"nonzero" bson:"transactionLibele"`
 	AbregedLibele        string             `validate:"nonzero" bson:"abregedLibele"`
-	Phone                string             `validate:"nonzero" bson:"phone"`
+	Phone                DBPhone            `validate:"nonzero" bson:"phone"`
 	Email                string             `validate:"nonzero" bson:"email"`
 	Bordereau            string             `validate:"nonzero" bson:"bordereau"`
 	Person               DBPerson           `validate:"nonzero" bson:"person"`

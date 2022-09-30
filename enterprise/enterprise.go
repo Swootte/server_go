@@ -89,9 +89,12 @@ func CreateEnterprise(ctx context.Context, enterprise model.EnterpriseInput, own
 		SellingPhysicalGoods: *enterprise.SellingPhysicalGoods,
 		TransactionLibele:    enterprise.TransactionLibele,
 		AbregedLibele:        enterprise.AbregedLibele,
-		Phone:                enterprise.Phone,
-		Email:                enterprise.Email,
-		Bordereau:            url,
+		Phone: database.DBPhone{
+			DialCode: enterprise.Phone.Dialcode,
+			Phone:    enterprise.Phone.Phone,
+		},
+		Email:     enterprise.Email,
+		Bordereau: url,
 		Person: database.DBPerson{
 			First_name: enterprise.Person.FirstName,
 			Last_name:  enterprise.Person.LastName,
@@ -491,13 +494,13 @@ func UpdateExecutionInformation(ctx context.Context, enterpriseId string, userID
 
 }
 
-func UpdatePublicInformation(ctx context.Context, enterpriseId string, userID string, name string, libelle string, libelleAbreged string, email *string, phone string, ip string) ([]*model.Enterprise, error) {
+func UpdatePublicInformation(ctx context.Context, enterpriseId string, userID string, name string, libelle string, libelleAbreged string, email *string, phone model.PhoneInput, ip string) ([]*model.Enterprise, error) {
 	_collections := database.MongoClient.Database(os.Getenv("DATABASE")).Collection("entreprises")
 	objectIdEnterprise, _ := primitive.ObjectIDFromHex(enterpriseId)
 	objectId, _ := primitive.ObjectIDFromHex(userID)
 
 	_time := time.Now().UTC().Format(time.RFC3339)
-	_update := bson.D{{Key: "$set", Value: bson.D{{Key: "name", Value: name}, {Key: "transactionLibele", Value: libelle}, {Key: "abregedLibele", Value: libelleAbreged}, {Key: "email", Value: email}, {Key: "phone", Value: phone}, {Key: "updatedAt", Value: _time}}}}
+	_update := bson.D{{Key: "$set", Value: bson.D{{Key: "name", Value: name}, {Key: "transactionLibele", Value: libelle}, {Key: "abregedLibele", Value: libelleAbreged}, {Key: "email", Value: email}, {Key: "phone", Value: bson.M{"phone": phone.Phone, "dial_code": phone.Dialcode}}, {Key: "updatedAt", Value: _time}}}}
 
 	_, err := _collections.UpdateOne(ctx, bson.D{
 		{Key: "_id", Value: objectIdEnterprise}, {Key: "creator", Value: objectId},

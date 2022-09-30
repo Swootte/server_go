@@ -1,5 +1,10 @@
 package model
 
+type Phone struct {
+	DialCode string `json:"dialcode" bson:"dial_code"`
+	Phone    string `json:"phone" bson:"phone"`
+}
+
 type Enterprise struct {
 	ID                   string  `json:"_id" bson:"_id"`
 	Type                 *string `json:"type" bson:"type"`
@@ -23,7 +28,7 @@ type Enterprise struct {
 	ShippingDelay        *string `json:"shippingDelay" bson:"shippingDelay"`
 	TransactionLibele    *string `json:"transactionLibele" bson:"transactionLibele"`
 	AbregedLibele        *string `json:"abregedLibele" bson:"abregedLibele"`
-	Phone                *string `json:"phone" bson:"phone"`
+	Phone                *Phone  `json:"phone" bson:"phone"`
 	Email                *string `json:"email" bson:"email"`
 	Rccm                 *string `json:"rccm" bson:"rccm"`
 	Sector               *string `json:"sector" bson:"sector"`

@@ -14,7 +14,7 @@ func CreateAgencyTest(c *client.Client, options client.Option, idToken string, p
             addAGency(agency: $agency, pinCode: $pinCode)
         }
 		`,
-		_response,
+		&_response,
 		client.Var("agency", agency),
 		client.Var("pinCode", pincode),
 		client.AddHeader("Authorization", "Bearer "+idToken),

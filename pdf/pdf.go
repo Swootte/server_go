@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
@@ -27,15 +28,29 @@ func toBase64(filename string) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
+var rootPath string
+
+const projectDirName = "server"
+
+func init() {
+	if os.Getenv("env") != "HEROKU" {
+		re := regexp.MustCompile(`^(.*` + os.Getenv("DIRNAME") + `)`)
+		cwd, _ := os.Getwd()
+		rootPath = string(re.Find([]byte(cwd)))
+	} else {
+		re := regexp.MustCompile(`^(.*` + projectDirName + `)`)
+		cwd, _ := os.Getwd()
+		rootPath = string(re.Find([]byte(cwd)))
+	}
+}
+
 func CreatePdfFile(qrcode string, enterpriseName string) (*bytes.Buffer, error) {
 	qrc, err := qr.NewWith(qrcode)
 	if err != nil {
 		return nil, err
 	}
 
-	pwd, _ := os.Getwd()
-
-	fileID := pwd + "/" + uuid.NewString() + ".png"
+	fileID := rootPath + "/" + uuid.NewString() + ".png"
 
 	w, err := standard.New(fileID)
 	if err != nil {
@@ -45,10 +60,10 @@ func CreatePdfFile(qrcode string, enterpriseName string) (*bytes.Buffer, error) 
 	qrc.Save(w)
 
 	bFile := toBase64(fileID)
-	androidImage := toBase64(pwd + "/assets/google-play-badge.jpg")
-	iosImage := toBase64(pwd + "/assets/Download_on_the_App_Store_Badge_FR_RGB_blk_100517.jpg")
+	androidImage := toBase64(rootPath + "/assets/google-play-badge.jpg")
+	iosImage := toBase64(rootPath + "/assets/Download_on_the_App_Store_Badge_FR_RGB_blk_100517.jpg")
 
-	LogoImage := toBase64(pwd + "/assets/swootte.jpg")
+	LogoImage := toBase64(rootPath + "/assets/swootte.jpg")
 
 	_pdf := pdf.NewMarotoCustomSize(consts.Portrait, "A6", "mm", 105.0, 148.0)
 	redColor := color.Color{
@@ -106,7 +121,7 @@ func CreatePdfFile(qrcode string, enterpriseName string) (*bytes.Buffer, error) 
 
 		_pdf.Row(3, func() {
 			_pdf.Col(12, func() {
-				_pdf.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.", props.Text{
+				_pdf.Text("Swootte vous permet de créer votre solution de point de vente pour accepter les paiements en Franc CFA sur place ou sur le web. Commercez sans frontière même à l'international. nos frais de traitement de paiements sont de 1%, notre système est sécurisé à l'aide de chiffrements et vous offre une sécurité de paiement optimale.", props.Text{
 					Align: consts.Center,
 					Size:  6,
 				})

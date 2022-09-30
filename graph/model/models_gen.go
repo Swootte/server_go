@@ -87,7 +87,7 @@ type EnterpriseInput struct {
 	ShippingDelay        *string        `json:"shippingDelay" bson:"shippingDelay"`
 	TransactionLibele    string         `json:"transactionLibele" bson:"transactionLibele"`
 	AbregedLibele        string         `json:"abregedLibele" bson:"abregedLibele"`
-	Phone                string         `json:"phone" bson:"phone"`
+	Phone                *PhoneInput    `json:"phone" bson:"phone"`
 	Email                string         `json:"email" bson:"email"`
 }
 
@@ -153,6 +153,11 @@ type PersonInput struct {
 	City      string  `json:"city" bson:"city"`
 	Zip       *string `json:"zip" bson:"zip"`
 	State     *string `json:"state" bson:"state"`
+}
+
+type PhoneInput struct {
+	Phone    string `json:"phone" bson:"phone"`
+	Dialcode string `json:"dialcode" bson:"dialcode"`
 }
 
 type RatingInsideInput struct {

@@ -178,7 +178,7 @@ type ComplexityRoot struct {
 		UpdateFcmToken                   func(childComplexity int, fcmToken *string) int
 		UpdatePersonnalInformation       func(childComplexity int, enterpriseID string, firstName string, lastName string, email string, address string, city string, state string, zip string) int
 		UpdateProfilePicture             func(childComplexity int, link string) int
-		UpdatePublicInformation          func(childComplexity int, enterpriseID string, name string, libelle string, libelleAbreged string, email *string, phone string) int
+		UpdatePublicInformation          func(childComplexity int, enterpriseID string, name string, libelle string, libelleAbreged string, email *string, phone model.PhoneInput) int
 		UploadFile                       func(childComplexity int, file graphql.Upload, typeArg string) int
 	}
 
@@ -224,6 +224,11 @@ type ComplexityRoot struct {
 		LastName  func(childComplexity int) int
 		State     func(childComplexity int) int
 		Zip       func(childComplexity int) int
+	}
+
+	Phone struct {
+		DialCode func(childComplexity int) int
+		Phone    func(childComplexity int) int
 	}
 
 	Query struct {
@@ -365,7 +370,7 @@ type MutationResolver interface {
 	UpdatePersonnalInformation(ctx context.Context, enterpriseID string, firstName string, lastName string, email string, address string, city string, state string, zip string) ([]*model.Enterprise, error)
 	UpdateEnterpriseInformation(ctx context.Context, enterpriseID string, rccm string, sector string, website *string, description *string) ([]*model.Enterprise, error)
 	UpdateExecutionInformation(ctx context.Context, enterpriseID string, sellingPyshicalGoods *bool, selfShipping *bool, shippingDelay *string) ([]*model.Enterprise, error)
-	UpdatePublicInformation(ctx context.Context, enterpriseID string, name string, libelle string, libelleAbreged string, email *string, phone string) ([]*model.Enterprise, error)
+	UpdatePublicInformation(ctx context.Context, enterpriseID string, name string, libelle string, libelleAbreged string, email *string, phone model.PhoneInput) ([]*model.Enterprise, error)
 	PayUnConfirmedTransaction(ctx context.Context, enterpriseID string, pinCode string, transactionID string) (*model.Paiement, error)
 	PayEnterprise(ctx context.Context, enterpriseID string, amount float64, pinCode string) (*model.Paiement, error)
 	RefundTransaction(ctx context.Context, enterpriseID string, pinCode string, transactionID string) (bool, error)
@@ -1300,7 +1305,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdatePublicInformation(childComplexity, args["enterpriseId"].(string), args["name"].(string), args["libelle"].(string), args["libelleAbreged"].(string), args["email"].(*string), args["phone"].(string)), true
+		return e.complexity.Mutation.UpdatePublicInformation(childComplexity, args["enterpriseId"].(string), args["name"].(string), args["libelle"].(string), args["libelleAbreged"].(string), args["email"].(*string), args["phone"].(model.PhoneInput)), true
 
 	case "Mutation.uploadFile":
 		if e.complexity.Mutation.UploadFile == nil {
@@ -1558,6 +1563,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Person.Zip(childComplexity), true
+
+	case "Phone.dialcode":
+		if e.complexity.Phone.DialCode == nil {
+			break
+		}
+
+		return e.complexity.Phone.DialCode(childComplexity), true
+
+	case "Phone.phone":
+		if e.complexity.Phone.Phone == nil {
+			break
+		}
+
+		return e.complexity.Phone.Phone(childComplexity), true
 
 	case "Query.getActivity":
 		if e.complexity.Query.GetActivity == nil {
@@ -2223,6 +2242,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLocationInput,
 		ec.unmarshalInputOwnerRule,
 		ec.unmarshalInputPersonInput,
+		ec.unmarshalInputPhoneInput,
 		ec.unmarshalInputRatingInsideInput,
 		ec.unmarshalInputTopUpInput,
 		ec.unmarshalInputUserInput,
@@ -2683,6 +2703,11 @@ type Person {
   state: String
 }
 
+input PhoneInput {
+  phone: String!
+  dialcode: String!
+}
+
 input EnterpriseInput {
   name: String!
   country: String!
@@ -2699,8 +2724,13 @@ input EnterpriseInput {
   shippingDelay: String
   transactionLibele: String!
   abregedLibele: String!
-  phone: String!
+  phone: PhoneInput!
   email: String!
+}
+
+type Phone {
+  phone: String!
+  dialcode: String!
 }
 
 type Enterprise  {
@@ -2726,7 +2756,7 @@ type Enterprise  {
     shippingDelay: String
     transactionLibele: String
     abregedLibele: String
-    phone: String
+    phone: Phone
     email: String
     rccm: String
     sector: String
@@ -2849,7 +2879,7 @@ type ChartData {
     updatePersonnalInformation(enterpriseId: String!, first_name: String!, last_name: String!, email: String!, address: String!, city: String!, state: String!, zip: String!): [Enterprise]! @auth(requires: USER)
     updateEnterpriseInformation(enterpriseId: String!, rccm: String!, sector: String!, website: String, description: String): [Enterprise]! @auth(requires: USER)
     updateExecutionInformation(enterpriseId: String!, sellingPyshicalGoods: Boolean, selfShipping: Boolean, shippingDelay: String): [Enterprise]! @auth(requires: USER)
-    updatePublicInformation(enterpriseId: String!, name: String!, libelle: String!, libelleAbreged: String!, email: String, phone: String!): [Enterprise]! @auth(requires: USER)
+    updatePublicInformation(enterpriseId: String!, name: String!, libelle: String!, libelleAbreged: String!, email: String, phone: PhoneInput!): [Enterprise]! @auth(requires: USER)
 
 
 
@@ -3954,10 +3984,10 @@ func (ec *executionContext) field_Mutation_updatePublicInformation_args(ctx cont
 		}
 	}
 	args["email"] = arg4
-	var arg5 string
+	var arg5 model.PhoneInput
 	if tmp, ok := rawArgs["phone"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
-		arg5, err = ec.unmarshalNString2string(ctx, tmp)
+		arg5, err = ec.unmarshalNPhoneInput2serverᚋgraphᚋmodelᚐPhoneInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6546,9 +6576,9 @@ func (ec *executionContext) _Enterprise_phone(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.Phone)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOPhone2ᚖserverᚋgraphᚋmodelᚐPhone(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Enterprise_phone(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6558,7 +6588,13 @@ func (ec *executionContext) fieldContext_Enterprise_phone(ctx context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "phone":
+				return ec.fieldContext_Phone_phone(ctx, field)
+			case "dialcode":
+				return ec.fieldContext_Phone_dialcode(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Phone", field.Name)
 		},
 	}
 	return fc, nil
@@ -10361,7 +10397,7 @@ func (ec *executionContext) _Mutation_updatePublicInformation(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdatePublicInformation(rctx, fc.Args["enterpriseId"].(string), fc.Args["name"].(string), fc.Args["libelle"].(string), fc.Args["libelleAbreged"].(string), fc.Args["email"].(*string), fc.Args["phone"].(string))
+			return ec.resolvers.Mutation().UpdatePublicInformation(rctx, fc.Args["enterpriseId"].(string), fc.Args["name"].(string), fc.Args["libelle"].(string), fc.Args["libelleAbreged"].(string), fc.Args["email"].(*string), fc.Args["phone"].(model.PhoneInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			requires, err := ec.unmarshalORole2ᚖserverᚋgraphᚋmodelᚐRole(ctx, "USER")
@@ -12500,6 +12536,94 @@ func (ec *executionContext) _Person_state(ctx context.Context, field graphql.Col
 func (ec *executionContext) fieldContext_Person_state(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Person",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Phone_phone(ctx context.Context, field graphql.CollectedField, obj *model.Phone) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Phone_phone(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Phone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Phone_phone(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Phone",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Phone_dialcode(ctx context.Context, field graphql.CollectedField, obj *model.Phone) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Phone_dialcode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DialCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Phone_dialcode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Phone",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -19800,7 +19924,7 @@ func (ec *executionContext) unmarshalInputEnterpriseInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
-			it.Phone, err = ec.unmarshalNString2string(ctx, v)
+			it.Phone, err = ec.unmarshalNPhoneInput2ᚖserverᚋgraphᚋmodelᚐPhoneInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20001,6 +20125,42 @@ func (ec *executionContext) unmarshalInputPersonInput(ctx context.Context, obj i
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
 			it.State, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPhoneInput(ctx context.Context, obj interface{}) (model.PhoneInput, error) {
+	var it model.PhoneInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"phone", "dialcode"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "phone":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
+			it.Phone, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "dialcode":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dialcode"))
+			it.Dialcode, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -21703,6 +21863,41 @@ func (ec *executionContext) _Person(ctx context.Context, sel ast.SelectionSet, o
 
 			out.Values[i] = ec._Person_state(ctx, field, obj)
 
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var phoneImplementors = []string{"Phone"}
+
+func (ec *executionContext) _Phone(ctx context.Context, sel ast.SelectionSet, obj *model.Phone) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, phoneImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Phone")
+		case "phone":
+
+			out.Values[i] = ec._Phone_phone(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dialcode":
+
+			out.Values[i] = ec._Phone_dialcode(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23457,6 +23652,16 @@ func (ec *executionContext) marshalNPerson2ᚖserverᚋgraphᚋmodelᚐPerson(ct
 	return ec._Person(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNPhoneInput2serverᚋgraphᚋmodelᚐPhoneInput(ctx context.Context, v interface{}) (model.PhoneInput, error) {
+	res, err := ec.unmarshalInputPhoneInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNPhoneInput2ᚖserverᚋgraphᚋmodelᚐPhoneInput(ctx context.Context, v interface{}) (*model.PhoneInput, error) {
+	res, err := ec.unmarshalInputPhoneInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNQRCodeOwner2serverᚋgraphᚋmodelᚐQRCodeOwner(ctx context.Context, sel ast.SelectionSet, v model.QRCodeOwner) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -24282,6 +24487,13 @@ func (ec *executionContext) unmarshalOPersonInput2ᚖserverᚋgraphᚋmodelᚐPe
 	}
 	res, err := ec.unmarshalInputPersonInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPhone2ᚖserverᚋgraphᚋmodelᚐPhone(ctx context.Context, sel ast.SelectionSet, v *model.Phone) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Phone(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORatingUser2ᚖserverᚋgraphᚋmodelᚐRatingUser(ctx context.Context, sel ast.SelectionSet, v *model.RatingUser) graphql.Marshaler {

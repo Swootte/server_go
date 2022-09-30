@@ -69,7 +69,9 @@ func LoadNonAddedContactTest(c *client.Client, options client.Option, idToken st
 				_id
 				first_name
 				last_name
-				address
+				keypair{
+					publicKey
+				}
 
 			}
 		}

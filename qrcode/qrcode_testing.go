@@ -65,7 +65,9 @@ func GetQrOwnerUserTest(c *client.Client, options client.Option, idToken string,
                         _id
                         first_name
                         last_name
-                        address
+                        keypair{
+                            publicKey
+                        }
                         
                     }
 

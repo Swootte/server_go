@@ -373,6 +373,11 @@ type Person {
   state: String
 }
 
+input PhoneInput {
+  phone: String!
+  dialcode: String!
+}
+
 input EnterpriseInput {
   name: String!
   country: String!
@@ -389,8 +394,13 @@ input EnterpriseInput {
   shippingDelay: String
   transactionLibele: String!
   abregedLibele: String!
-  phone: String!
+  phone: PhoneInput!
   email: String!
+}
+
+type Phone {
+  phone: String!
+  dialcode: String!
 }
 
 type Enterprise  {
@@ -416,7 +426,7 @@ type Enterprise  {
     shippingDelay: String
     transactionLibele: String
     abregedLibele: String
-    phone: String
+    phone: Phone
     email: String
     rccm: String
     sector: String
@@ -539,7 +549,7 @@ type ChartData {
     updatePersonnalInformation(enterpriseId: String!, first_name: String!, last_name: String!, email: String!, address: String!, city: String!, state: String!, zip: String!): [Enterprise]! @auth(requires: USER)
     updateEnterpriseInformation(enterpriseId: String!, rccm: String!, sector: String!, website: String, description: String): [Enterprise]! @auth(requires: USER)
     updateExecutionInformation(enterpriseId: String!, sellingPyshicalGoods: Boolean, selfShipping: Boolean, shippingDelay: String): [Enterprise]! @auth(requires: USER)
-    updatePublicInformation(enterpriseId: String!, name: String!, libelle: String!, libelleAbreged: String!, email: String, phone: String!): [Enterprise]! @auth(requires: USER)
+    updatePublicInformation(enterpriseId: String!, name: String!, libelle: String!, libelleAbreged: String!, email: String, phone: PhoneInput!): [Enterprise]! @auth(requires: USER)
 
 
 

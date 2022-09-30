@@ -10,7 +10,6 @@ import (
 	"server/user"
 	"server/utils"
 
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 	"github.com/rs/cors"
 )
@@ -39,7 +38,7 @@ func main() {
 	router.Use(middleware.BasicAuthMiddleware())
 	srv := serverutils.StartServer()
 	dataloadersSrv := dataloaders.Middleware(dataloaders.NewLoaders(), srv)
-	router.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
+	//router.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	router.Handle("/graphql", dataloadersSrv)
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, router))

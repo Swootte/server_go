@@ -381,7 +381,7 @@ func (r *mutationResolver) UpdateExecutionInformation(ctx context.Context, enter
 }
 
 // UpdatePublicInformation is the resolver for the updatePublicInformation field.
-func (r *mutationResolver) UpdatePublicInformation(ctx context.Context, enterpriseID string, name string, libelle string, libelleAbreged string, email *string, phone string) ([]*model.Enterprise, error) {
+func (r *mutationResolver) UpdatePublicInformation(ctx context.Context, enterpriseID string, name string, libelle string, libelleAbreged string, email *string, phone model.PhoneInput) ([]*model.Enterprise, error) {
 	key := utils.UserCtxKey
 	x := utils.ForContextDBUser(ctx, key)
 	ip := middleware.ForRemoteAddressContext(ctx)

@@ -7,9 +7,11 @@ import (
 	"server/graph/model"
 	"server/middleware"
 	"server/serverutils"
+	"server/user"
 	"testing"
 
 	"github.com/99designs/gqlgen/client"
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,25 +25,25 @@ func TestAgency(t *testing.T) {
 
 	c := client.New(handlr)
 
-	customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), "auth_uid")
+	customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), user.User_adminUIDTEST)
 	idToken := firebase.GetIdToken(customToken)
 	t.Run("create agency", func(t *testing.T) {
 		input := model.AgencyInpyt{
-			Title:   "",
-			Address: "",
-			City:    "",
-			Country: "",
-			Token:   "",
+			Title:   gofakeit.JobTitle(),
+			Address: gofakeit.Address().Address,
+			City:    gofakeit.Address().City,
+			Country: gofakeit.Address().Country,
+			Token:   gofakeit.UUID(),
 		}
-		agency, err := agency.CreateAgencyTest(c, options, idToken, "", input)
+		agency, err := agency.CreateAgencyTest(c, options, idToken, user.Admin_pinTEST, input)
 		require.Empty(t, err)
-		require.NotEmpty(t, agency)
+		require.NotEmpty(t, agency.AddAGency)
 
 	})
 
 	t.Run("load all agency", func(t *testing.T) {
 		response, err := agency.LoadAlAgenciesTest(c, options, idToken)
 		require.Empty(t, err)
-		require.NotEmpty(t, response)
+		require.NotEmpty(t, response.RetrieveAllAgnecies)
 	})
 }

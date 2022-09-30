@@ -31,7 +31,31 @@ func TestQRCode(t *testing.T) {
 	auth_uid_2 := gofakeit.UUID()
 	// var _user model.User
 	var _user2 struct{ CreateUser *model.UserCreated }
-	var _enterprise model.Enterprise
+	var _enterprise struct {
+		CreateEnterprise struct {
+			ID                   string       `json:"_id" bson:"_id"`
+			Name                 string       `json:"name" bson:"name"`
+			Type                 string       `json:"type" bson:"type"`
+			LogoUrl              string       `json:"logoUrl" bson:"logoUrl"`
+			PublishableKey       string       `json:"publishableKey" bson:"publishableKey"`
+			Private_key          string       `json:"private_key" bson:"private_key"`
+			WalletPublicKey      string       `json:"walletPublicKey" bson:"walletPublicKey"`
+			DefaultEnterprise    bool         `json:"default_enterprise" bson:"default_enterprise"`
+			Country              string       `json:"country" bson:"country"`
+			Description          string       `json:"description" bson:"description"`
+			SellingPhysicalGoods bool         `json:"sellingPhysicalGoods" bson:"sellingPhysicalGoods"`
+			SelfShippingProduct  string       `json:"selfShippingProduct" bson:"selfShippingProduct"`
+			ShippingDelay        string       `json:"shippingDelay" bson:"shippingDelay"`
+			TransactionLibele    string       `json:"transactionLibele" bson:"transactionLibele"`
+			AbregedLibele        string       `json:"abregedLibele" bson:"abregedLibele"`
+			Phone                model.Phone  `json:"phone" bson:"phone"`
+			Email                string       `json:"email" bson:"email"`
+			Sector               string       `json:"sector" bson:"sector"`
+			RCCM                 string       `json:"rccm" bson:"rccm"`
+			Website              string       `json:"website" bson:"website"`
+			Person               model.Person `json:"person" bson:"person"`
+		}
+	}
 	var _payment model.Paiement
 	t.Run("create new user", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
@@ -96,24 +120,27 @@ func TestQRCode(t *testing.T) {
 			ShippingDelay:        new(string),
 			TransactionLibele:    gofakeit.CompanySuffix(),
 			AbregedLibele:        gofakeit.CompanySuffix(),
-			Phone:                gofakeit.Phone(),
-			Email:                gofakeit.Email(),
+			Phone: &model.PhoneInput{
+				Phone:    gofakeit.PhoneFormatted(),
+				Dialcode: gofakeit.Phone(),
+			},
+			Email: gofakeit.Email(),
 		}
 		company, err := enterprise.CreateEnterpriseTest(c, options, idToken, input)
 		require.Nil(t, err)
-		_enterprise = company.CreateEnterprise
+		_enterprise = company
 	})
 
 	t.Run("should getQRcode | Enterprise", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_2)
 		idToken := firebase.GetIdToken(customToken)
-		company, err := qrcode.GetQrOwnerTest(c, options, idToken, _enterprise.WalletPublicKey)
+		company, err := qrcode.GetQrOwnerTest(c, options, idToken, _enterprise.CreateEnterprise.WalletPublicKey)
 		require.Nil(t, err)
-		require.Equal(t, _enterprise.Name, company.GetQrOwner.Name)
-		require.Equal(t, _enterprise.ID, company.GetQrOwner.ID)
+		require.Equal(t, _enterprise.CreateEnterprise.Name, *company.GetQrOwner.Name)
+		require.Equal(t, _enterprise.CreateEnterprise.ID, company.GetQrOwner.ID)
 	})
 	t.Run("should get new commerce transaction", func(t *testing.T) {
-		auth := _enterprise.PublishableKey + ":" + _enterprise.PrivateKey
+		auth := _enterprise.CreateEnterprise.PublishableKey + ":" + _enterprise.CreateEnterprise.Private_key
 		basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 		payment, err := transaction.AuthenticateForPaymentTest(c, options, basicAuth, 100, "blabla")
 		require.Nil(t, err)

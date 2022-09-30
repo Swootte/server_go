@@ -6,8 +6,56 @@ import (
 	"github.com/99designs/gqlgen/client"
 )
 
-func CreateEnterpriseTest(c *client.Client, options client.Option, idToken string, enterprise model.EnterpriseInput) (struct{ CreateEnterprise model.Enterprise }, error) {
-	var _response struct{ CreateEnterprise model.Enterprise }
+func CreateEnterpriseTest(c *client.Client, options client.Option, idToken string, enterprise model.EnterpriseInput) (struct {
+	CreateEnterprise struct {
+		ID                   string       `json:"_id" bson:"_id"`
+		Name                 string       `json:"name" bson:"name"`
+		Type                 string       `json:"type" bson:"type"`
+		LogoUrl              string       `json:"logoUrl" bson:"logoUrl"`
+		PublishableKey       string       `json:"publishableKey" bson:"publishableKey"`
+		Private_key          string       `json:"private_key" bson:"private_key"`
+		WalletPublicKey      string       `json:"walletPublicKey" bson:"walletPublicKey"`
+		DefaultEnterprise    bool         `json:"default_enterprise" bson:"default_enterprise"`
+		Country              string       `json:"country" bson:"country"`
+		Description          string       `json:"description" bson:"description"`
+		SellingPhysicalGoods bool         `json:"sellingPhysicalGoods" bson:"sellingPhysicalGoods"`
+		SelfShippingProduct  string       `json:"selfShippingProduct" bson:"selfShippingProduct"`
+		ShippingDelay        string       `json:"shippingDelay" bson:"shippingDelay"`
+		TransactionLibele    string       `json:"transactionLibele" bson:"transactionLibele"`
+		AbregedLibele        string       `json:"abregedLibele" bson:"abregedLibele"`
+		Phone                model.Phone  `json:"phone" bson:"phone"`
+		Email                string       `json:"email" bson:"email"`
+		Sector               string       `json:"sector" bson:"sector"`
+		RCCM                 string       `json:"rccm" bson:"rccm"`
+		Website              string       `json:"website" bson:"website"`
+		Person               model.Person `json:"person" bson:"person"`
+	}
+}, error) {
+	var _response struct {
+		CreateEnterprise struct {
+			ID                   string       `json:"_id" bson:"_id"`
+			Name                 string       `json:"name" bson:"name"`
+			Type                 string       `json:"type" bson:"type"`
+			LogoUrl              string       `json:"logoUrl" bson:"logoUrl"`
+			PublishableKey       string       `json:"publishableKey" bson:"publishableKey"`
+			Private_key          string       `json:"private_key" bson:"private_key"`
+			WalletPublicKey      string       `json:"walletPublicKey" bson:"walletPublicKey"`
+			DefaultEnterprise    bool         `json:"default_enterprise" bson:"default_enterprise"`
+			Country              string       `json:"country" bson:"country"`
+			Description          string       `json:"description" bson:"description"`
+			SellingPhysicalGoods bool         `json:"sellingPhysicalGoods" bson:"sellingPhysicalGoods"`
+			SelfShippingProduct  string       `json:"selfShippingProduct" bson:"selfShippingProduct"`
+			ShippingDelay        string       `json:"shippingDelay" bson:"shippingDelay"`
+			TransactionLibele    string       `json:"transactionLibele" bson:"transactionLibele"`
+			AbregedLibele        string       `json:"abregedLibele" bson:"abregedLibele"`
+			Phone                model.Phone  `json:"phone" bson:"phone"`
+			Email                string       `json:"email" bson:"email"`
+			Sector               string       `json:"sector" bson:"sector"`
+			RCCM                 string       `json:"rccm" bson:"rccm"`
+			Website              string       `json:"website" bson:"website"`
+			Person               model.Person `json:"person" bson:"person"`
+		}
+	}
 	err := c.Post(
 		`
 		mutation CreateEnterprise($enterprise: EnterpriseInput!) {
@@ -27,7 +75,10 @@ func CreateEnterpriseTest(c *client.Client, options client.Option, idToken strin
 				shippingDelay
 				transactionLibele
 				abregedLibele
-				phone
+				phone {
+					phone
+					dialcode
+				}
 				email
 				sector
 				rccm
@@ -74,8 +125,38 @@ func RemoveEnterpriseTest(c *client.Client, options client.Option, idToken strin
 	return _response, err
 }
 
-func RecreateTestPublishableKeyTest(c *client.Client, options client.Option, idToken string, pincode string, enterpriseId string) (struct{ RecreateEnterprisePublishableKey []model.Enterprise }, error) {
-	var _response struct{ RecreateEnterprisePublishableKey []model.Enterprise }
+func RecreateTestPublishableKeyTest(c *client.Client, options client.Option, idToken string, pincode string, enterpriseId string) (struct {
+	RecreateEnterprisePublishableKey []struct {
+		ID                string `json:"_id" bson:"_id"`
+		Type              string `json:"type" bson:"type"`
+		Name              string `json:"name" bson:"name"`
+		Website           string `json:"website" bson:"website"`
+		LogoUrl           string `json:"logoUrl" bson:"logoUrl"`
+		Creator           string `json:"creator" bson:"creator"`
+		CreatedAt         string `json:"createdAt" bson:"createdAt"`
+		UpdatedAt         string `json:"updatedAt" bson:"updatedAt"`
+		PublishableKey    string `json:"publishableKey" bson:"publishableKey"`
+		Private_key       string `json:"private_key" bson:"private_key"`
+		WalletPublicKey   string `json:"walletPublicKey" bson:"walletPublicKey"`
+		DefaultEnterprise bool   `json:"default_enterprise" bson:"default_enterprise"`
+	}
+}, error) {
+	var _response struct {
+		RecreateEnterprisePublishableKey []struct {
+			ID                string `json:"_id" bson:"_id"`
+			Type              string `json:"type" bson:"type"`
+			Name              string `json:"name" bson:"name"`
+			Website           string `json:"website" bson:"website"`
+			LogoUrl           string `json:"logoUrl" bson:"logoUrl"`
+			Creator           string `json:"creator" bson:"creator"`
+			CreatedAt         string `json:"createdAt" bson:"createdAt"`
+			UpdatedAt         string `json:"updatedAt" bson:"updatedAt"`
+			PublishableKey    string `json:"publishableKey" bson:"publishableKey"`
+			Private_key       string `json:"private_key" bson:"private_key"`
+			WalletPublicKey   string `json:"walletPublicKey" bson:"walletPublicKey"`
+			DefaultEnterprise bool   `json:"default_enterprise" bson:"default_enterprise"`
+		}
+	}
 	err := c.Post(
 		`
         mutation RecreatePublishableKey($enterpriseId: String!, $pinCode: String!) {
@@ -105,8 +186,38 @@ func RecreateTestPublishableKeyTest(c *client.Client, options client.Option, idT
 	return _response, err
 }
 
-func RecreateTestPrivate_keyTest(c *client.Client, options client.Option, idToken string, pincode string, enterpriseId string) (struct{ RecreateEnterprisePrivateKey []model.Enterprise }, error) {
-	var _response struct{ RecreateEnterprisePrivateKey []model.Enterprise }
+func RecreateTestPrivate_keyTest(c *client.Client, options client.Option, idToken string, pincode string, enterpriseId string) (struct {
+	RecreateEnterprisePrivateKey []struct {
+		ID                string `json:"_id" bson:"_id"`
+		Type              string `json:"type" bson:"type"`
+		Name              string `json:"name" bson:"name"`
+		Website           string `json:"website" bson:"website"`
+		LogoUrl           string `json:"logoUrl" bson:"logoUrl"`
+		Creator           string `json:"creator" bson:"creator"`
+		CreatedAt         string `json:"createdAt" bson:"createdAt"`
+		UpdatedAt         string `json:"updatedAt" bson:"updatedAt"`
+		PublishableKey    string `json:"publishableKey" bson:"publishableKey"`
+		Private_key       string `json:"private_key" bson:"private_key"`
+		WalletPublicKey   string `json:"walletPublicKey" bson:"walletPublicKey"`
+		DefaultEnterprise bool   `json:"default_enterprise" bson:"default_enterprise"`
+	}
+}, error) {
+	var _response struct {
+		RecreateEnterprisePrivateKey []struct {
+			ID                string `json:"_id" bson:"_id"`
+			Type              string `json:"type" bson:"type"`
+			Name              string `json:"name" bson:"name"`
+			Website           string `json:"website" bson:"website"`
+			LogoUrl           string `json:"logoUrl" bson:"logoUrl"`
+			Creator           string `json:"creator" bson:"creator"`
+			CreatedAt         string `json:"createdAt" bson:"createdAt"`
+			UpdatedAt         string `json:"updatedAt" bson:"updatedAt"`
+			PublishableKey    string `json:"publishableKey" bson:"publishableKey"`
+			Private_key       string `json:"private_key" bson:"private_key"`
+			WalletPublicKey   string `json:"walletPublicKey" bson:"walletPublicKey"`
+			DefaultEnterprise bool   `json:"default_enterprise" bson:"default_enterprise"`
+		}
+	}
 	err := c.Post(
 		`
         mutation RecreatePrivate_key($enterpriseId: String!, $pinCode: String!) {
@@ -156,7 +267,10 @@ func UpdateEnterpriseTypeTest(c *client.Client, options client.Option, idToken s
                     shippingDelay
                     transactionLibele
                     abregedLibele
-                    phone
+					phone {
+						phone
+						dialcode
+					}
                     email
                     sector
                     rccm
@@ -205,7 +319,10 @@ func UpdatePersonnalInformationTest(c *client.Client, options client.Option, idT
                     shippingDelay
                     transactionLibele
                     abregedLibele
-                    phone
+					phone {
+						phone
+						dialcode
+					}
                     email
                     sector
                     rccm
@@ -259,7 +376,10 @@ func UpdateEnterpriseInformationTest(c *client.Client, options client.Option, id
                     shippingDelay
                     transactionLibele
                     abregedLibele
-                    phone
+					phone {
+						phone
+						dialcode
+					}
                     email
                     sector
                     rccm
@@ -299,8 +419,6 @@ func UpdateExecutionInformationTest(c *client.Client, options client.Option, idT
                     name
                     type
                     logoUrl
-                    publishableKey
-                    private_key
                     walletPublicKey
                     default_enterprise
                     country
@@ -310,7 +428,10 @@ func UpdateExecutionInformationTest(c *client.Client, options client.Option, idT
                     shippingDelay
                     transactionLibele
                     abregedLibele
-                    phone
+					phone {
+						phone
+						dialcode
+					}
                     email
                     sector
                     rccm
@@ -339,18 +460,16 @@ func UpdateExecutionInformationTest(c *client.Client, options client.Option, idT
 	return _response, err
 }
 
-func UpdatePublicInformationTest(c *client.Client, options client.Option, idToken string, enterpriseId string, name string, libelle string, libelleAbreged string, email string, phone string) (struct{ UpdatePublicInformation []model.Enterprise }, error) {
+func UpdatePublicInformationTest(c *client.Client, options client.Option, idToken string, enterpriseId string, name string, libelle string, libelleAbreged string, email string, phone model.PhoneInput) (struct{ UpdatePublicInformation []model.Enterprise }, error) {
 	var _response struct{ UpdatePublicInformation []model.Enterprise }
 	err := c.Post(
 		`
-        mutation UpdatePublicInformation($enterpriseId: String!, $name: String!, $libelle: String!, $libelleAbreged: String!, $email: String, $phone: String!) {
+        mutation UpdatePublicInformation($enterpriseId: String!, $name: String!, $libelle: String!, $libelleAbreged: String!, $email: String, $phone: PhoneInput!) {
             updatePublicInformation(enterpriseId: $enterpriseId, name: $name, libelle: $libelle, libelleAbreged: $libelleAbreged, email: $email, phone: $phone) {
                     _id
                     name
                     type
                     logoUrl
-                    publishableKey
-                    private_key
                     walletPublicKey
                     default_enterprise
                     country
@@ -360,7 +479,10 @@ func UpdatePublicInformationTest(c *client.Client, options client.Option, idToke
                     shippingDelay
                     transactionLibele
                     abregedLibele
-                    phone
+					phone {
+						phone
+						dialcode
+					}
                     email
                     sector
                     rccm

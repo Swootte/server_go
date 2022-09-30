@@ -47,7 +47,31 @@ func TestEnterprise(t *testing.T) {
 	var _db_user1 *model.User
 	// var _db_user2 *model.User
 	var _agencies struct{ RetrieveAllAgnecies []*model.Agency }
-	var _enterprise model.Enterprise
+	var _enterprise struct {
+		CreateEnterprise struct {
+			ID                   string       `json:"_id" bson:"_id"`
+			Name                 string       `json:"name" bson:"name"`
+			Type                 string       `json:"type" bson:"type"`
+			LogoUrl              string       `json:"logoUrl" bson:"logoUrl"`
+			PublishableKey       string       `json:"publishableKey" bson:"publishableKey"`
+			Private_key          string       `json:"private_key" bson:"private_key"`
+			WalletPublicKey      string       `json:"walletPublicKey" bson:"walletPublicKey"`
+			DefaultEnterprise    bool         `json:"default_enterprise" bson:"default_enterprise"`
+			Country              string       `json:"country" bson:"country"`
+			Description          string       `json:"description" bson:"description"`
+			SellingPhysicalGoods bool         `json:"sellingPhysicalGoods" bson:"sellingPhysicalGoods"`
+			SelfShippingProduct  string       `json:"selfShippingProduct" bson:"selfShippingProduct"`
+			ShippingDelay        string       `json:"shippingDelay" bson:"shippingDelay"`
+			TransactionLibele    string       `json:"transactionLibele" bson:"transactionLibele"`
+			AbregedLibele        string       `json:"abregedLibele" bson:"abregedLibele"`
+			Phone                model.Phone  `json:"phone" bson:"phone"`
+			Email                string       `json:"email" bson:"email"`
+			Sector               string       `json:"sector" bson:"sector"`
+			RCCM                 string       `json:"rccm" bson:"rccm"`
+			Website              string       `json:"website" bson:"website"`
+			Person               model.Person `json:"person" bson:"person"`
+		}
+	}
 	var _transaction model.Paiement
 	t.Run("create new user", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
@@ -121,24 +145,28 @@ func TestEnterprise(t *testing.T) {
 			ShippingDelay:        new(string),
 			TransactionLibele:    gofakeit.CompanySuffix(),
 			AbregedLibele:        gofakeit.CompanySuffix(),
-			Phone:                gofakeit.Phone(),
-			Email:                gofakeit.Email(),
+			Phone: &model.PhoneInput{
+				Phone:    gofakeit.Phone(),
+				Dialcode: gofakeit.Phone(),
+			},
+			Email: gofakeit.Email(),
 		}
 		company, err := enterprise.CreateEnterpriseTest(c, options, idToken, input)
 		require.Empty(t, err)
 		require.NotEmpty(t, company)
-		_enterprise = company.CreateEnterprise
-		require.Equal(t, *company.CreateEnterprise.Name, input.Name)
-		require.Equal(t, *company.CreateEnterprise.Rccm, input.Rccm)
-		require.Equal(t, *company.CreateEnterprise.Email, input.Email)
+		_enterprise = company
+		require.Equal(t, company.CreateEnterprise.Name, input.Name)
+		require.Equal(t, company.CreateEnterprise.RCCM, input.Rccm)
+		require.Equal(t, company.CreateEnterprise.Email, input.Email)
 		require.Equal(t, *company.CreateEnterprise.Person.FirstName, input.Person.FirstName)
 		require.Equal(t, *company.CreateEnterprise.Person.LastName, input.Person.LastName)
 		require.Equal(t, *company.CreateEnterprise.Person.Address, input.Person.Address)
 		require.Equal(t, company.CreateEnterprise.Person.State, input.Person.State)
-		require.Equal(t, *company.CreateEnterprise.TransactionLibele, input.TransactionLibele)
-		require.Equal(t, *company.CreateEnterprise.AbregedLibele, input.AbregedLibele)
-		require.Equal(t, *company.CreateEnterprise.Sector, input.ActivitySector)
-		require.Equal(t, *company.CreateEnterprise.Phone, input.Phone)
+		require.Equal(t, company.CreateEnterprise.TransactionLibele, input.TransactionLibele)
+		require.Equal(t, company.CreateEnterprise.AbregedLibele, input.AbregedLibele)
+		require.Equal(t, company.CreateEnterprise.Sector, input.ActivitySector)
+		require.Equal(t, company.CreateEnterprise.Phone.Phone, input.Phone.Phone)
+		require.Equal(t, company.CreateEnterprise.Phone.DialCode, input.Phone.Dialcode)
 	})
 	t.Run("should load all enterprise for a user", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
@@ -154,7 +182,7 @@ func TestEnterprise(t *testing.T) {
 		idToken := firebase.GetIdToken(customToken)
 		_type := "INDIVIDUAL"
 		_country := "CG"
-		compagnies, err := enterprise.UpdateEnterpriseTypeTest(c, options, idToken, _enterprise.ID, _type, _country)
+		compagnies, err := enterprise.UpdateEnterpriseTypeTest(c, options, idToken, _enterprise.CreateEnterprise.ID, _type, _country)
 		require.Empty(t, err)
 		require.NotNil(t, compagnies)
 		require.Equal(t, *compagnies.UpdateEnterpriseType[0].Type, _type)
@@ -172,7 +200,7 @@ func TestEnterprise(t *testing.T) {
 		city := gofakeit.UUID() + "city"
 		state := gofakeit.UUID() + "state"
 		zip := "25000"
-		compagnies, err := enterprise.UpdatePersonnalInformationTest(c, options, idToken, _enterprise.ID, first_name, last_name, email, address, city, state, zip)
+		compagnies, err := enterprise.UpdatePersonnalInformationTest(c, options, idToken, _enterprise.CreateEnterprise.ID, first_name, last_name, email, address, city, state, zip)
 		require.Empty(t, err)
 		require.NotEmpty(t, compagnies)
 		require.Equal(t, *compagnies.UpdatePersonnalInformation[0].Person.FirstName, first_name)
@@ -192,7 +220,7 @@ func TestEnterprise(t *testing.T) {
 		sector := gofakeit.UUID() + "sector"
 		website := gofakeit.UUID() + "website.com"
 		description := gofakeit.UUID() + "description"
-		compagnies, err := enterprise.UpdateEnterpriseInformationTest(c, options, idToken, _enterprise.ID, rccm, sector, website, description)
+		compagnies, err := enterprise.UpdateEnterpriseInformationTest(c, options, idToken, _enterprise.CreateEnterprise.ID, rccm, sector, website, description)
 		require.Empty(t, err)
 		require.NotNil(t, compagnies)
 		require.Equal(t, *compagnies.UpdateEnterpriseInformation[0].Rccm, rccm)
@@ -210,7 +238,7 @@ func TestEnterprise(t *testing.T) {
 		selfShipping := true
 		shippingDelay := gofakeit.UUID() + "shippingDelay"
 
-		compagnies, err := enterprise.UpdateExecutionInformationTest(c, options, idToken, _enterprise.ID, sellingPyshicalGoods, selfShipping, shippingDelay)
+		compagnies, err := enterprise.UpdateExecutionInformationTest(c, options, idToken, _enterprise.CreateEnterprise.ID, sellingPyshicalGoods, selfShipping, shippingDelay)
 		require.Empty(t, err)
 		require.NotNil(t, compagnies)
 		require.Equal(t, *compagnies.UpdateExecutionInformation[0].SellingPhysicalGoods, sellingPyshicalGoods)
@@ -227,21 +255,26 @@ func TestEnterprise(t *testing.T) {
 		libelleAbreged := gofakeit.UUID() + "libelleAbreged"
 		email := gofakeit.Email()
 		phone := gofakeit.Phone()
-
-		compagnies, err := enterprise.UpdatePublicInformationTest(c, options, idToken, _enterprise.ID, name, libelle, libelleAbreged, email, phone)
+		dialcode := gofakeit.Phone()
+		input := model.PhoneInput{
+			Phone:    phone,
+			Dialcode: dialcode,
+		}
+		compagnies, err := enterprise.UpdatePublicInformationTest(c, options, idToken, _enterprise.CreateEnterprise.ID, name, libelle, libelleAbreged, email, input)
 		require.Empty(t, err)
 		require.NotNil(t, compagnies)
 		require.Equal(t, *compagnies.UpdatePublicInformation[0].Name, name)
 		require.Equal(t, *compagnies.UpdatePublicInformation[0].TransactionLibele, libelle)
 		require.Equal(t, *compagnies.UpdatePublicInformation[0].AbregedLibele, libelleAbreged)
 		require.Equal(t, *compagnies.UpdatePublicInformation[0].Email, email)
-		require.Equal(t, *compagnies.UpdatePublicInformation[0].Phone, phone)
+		require.Equal(t, compagnies.UpdatePublicInformation[0].Phone.Phone, phone)
+		require.Equal(t, compagnies.UpdatePublicInformation[0].Phone.DialCode, dialcode)
 	})
 
 	t.Run("should get enterprise ethereum balance", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
-		balance, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken, _enterprise.ID)
+		balance, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
 		require.Equal(t, balance.GetEnterpriseBalance, float64(0))
 	})
@@ -250,7 +283,7 @@ func TestEnterprise(t *testing.T) {
 		yesterday := now.AddDate(0, -1, 0)
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
-		charteData, err := enterprise.GetProfilNetChartDataTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339))
+		charteData, err := enterprise.GetProfilNetChartDataTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339))
 		require.Empty(t, err)
 		require.NotNil(t, charteData)
 		require.Equal(t, *charteData.GetProfilNetChartData.CurrentTotal, float64(0))
@@ -266,7 +299,7 @@ func TestEnterprise(t *testing.T) {
 
 		now := time.Now()
 		yesterday := now.AddDate(0, -1, 0)
-		charteData, err := enterprise.GetProfilBrutChartDataTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339))
+		charteData, err := enterprise.GetProfilBrutChartDataTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339))
 		require.Empty(t, err)
 		require.NotNil(t, charteData)
 		require.Equal(t, *charteData.GetProfilBrutChartData.CurrentTotal, float64(0))
@@ -281,7 +314,7 @@ func TestEnterprise(t *testing.T) {
 
 		now := time.Now()
 		yesterday := now.AddDate(0, -1, 0)
-		charteData, err := enterprise.GetProfilNonCarpturedChartDataTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339))
+		charteData, err := enterprise.GetProfilNonCarpturedChartDataTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339))
 		require.Empty(t, err)
 		require.NotNil(t, charteData)
 		require.Equal(t, *charteData.GetProfilNonCarpturedChartData.CurrentTotal, float64(0))
@@ -294,7 +327,7 @@ func TestEnterprise(t *testing.T) {
 	t.Run("should get pdf", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
-		pdf, err := enterprise.GetPdfTest(c, options, idToken, _enterprise.ID)
+		pdf, err := enterprise.GetPdfTest(c, options, idToken, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
 		require.NotEmpty(t, pdf.GetPdf)
 	})
@@ -305,7 +338,7 @@ func TestEnterprise(t *testing.T) {
 
 		now := time.Now()
 		yesterday := now.AddDate(0, -1, 0)
-		transactions, err := enterprise.GetAllTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
+		transactions, err := enterprise.GetAllTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
 		require.Empty(t, err)
 		require.Equal(t, len(transactions.GetAllTransactionByEnterpriseId.Transactions), 0)
 	})
@@ -314,7 +347,7 @@ func TestEnterprise(t *testing.T) {
 		idToken := firebase.GetIdToken(customToken)
 		now := time.Now()
 		yesterday := now.AddDate(0, -1, 0)
-		transactions, err := enterprise.GetSuccessFullTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
+		transactions, err := enterprise.GetSuccessFullTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
 		require.Empty(t, err)
 		require.Equal(t, len(transactions.GetSuccessFullTransactionByEnterpriseId.Transactions), 0)
 	})
@@ -323,7 +356,7 @@ func TestEnterprise(t *testing.T) {
 		idToken := firebase.GetIdToken(customToken)
 		now := time.Now()
 		yesterday := now.AddDate(0, -1, 0)
-		transactions, err := enterprise.GetRefundedTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
+		transactions, err := enterprise.GetRefundedTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
 		require.Empty(t, err)
 		require.Equal(t, len(transactions.GetRefundedTransactionByEnterpriseId.Transactions), 0)
 	})
@@ -333,7 +366,7 @@ func TestEnterprise(t *testing.T) {
 		idToken := firebase.GetIdToken(customToken)
 		now := time.Now()
 		yesterday := now.AddDate(0, -1, 0)
-		transactions, err := enterprise.GetNonCapturedTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
+		transactions, err := enterprise.GetNonCapturedTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
 		require.Empty(t, err)
 		require.Equal(t, len(transactions.GetNonCapturedTransactionByEnterpriseId.Transactions), 0)
 	})
@@ -342,7 +375,7 @@ func TestEnterprise(t *testing.T) {
 		idToken := firebase.GetIdToken(customToken)
 		now := time.Now()
 		yesterday := now.AddDate(0, -1, 0)
-		transactions, err := enterprise.GetFailedTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
+		transactions, err := enterprise.GetFailedTransactionByEnterpriseIdTest(c, options, idToken, _enterprise.CreateEnterprise.ID, now.UTC().Format(time.RFC3339), yesterday.UTC().Format(time.RFC3339), 5, 0)
 		require.Empty(t, err)
 		require.Equal(t, len(transactions.GetFailedTransactionByEnterpriseId.Transactions), 0)
 	})
@@ -350,23 +383,23 @@ func TestEnterprise(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
 
-		compagnies, err := enterprise.RecreateTestPublishableKeyTest(c, options, idToken, user.UserPinCode, _enterprise.ID)
+		compagnies, err := enterprise.RecreateTestPublishableKeyTest(c, options, idToken, user.UserPinCode, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
-		require.NotEqual(t, compagnies.RecreateEnterprisePublishableKey[0].PublishableKey, _enterprise.PublishableKey)
+		require.NotEqual(t, compagnies.RecreateEnterprisePublishableKey[0].PublishableKey, _enterprise.CreateEnterprise.PublishableKey)
 	})
 	t.Run("should recreate privateKey", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
 
-		compagnies, err := enterprise.RecreateTestPrivate_keyTest(c, options, idToken, user.UserPinCode, _enterprise.ID)
+		compagnies, err := enterprise.RecreateTestPrivate_keyTest(c, options, idToken, user.UserPinCode, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
-		require.NotEqual(t, compagnies.RecreateEnterprisePrivateKey[0].PrivateKey, _enterprise.PrivateKey)
+		require.NotEqual(t, compagnies.RecreateEnterprisePrivateKey[0].Private_key, _enterprise.CreateEnterprise.Private_key)
 	})
 
 	t.Run("should remove enterprise", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
-		compagnies, err := enterprise.RemoveEnterpriseTest(c, options, idToken, user.UserPinCode, _enterprise.ID)
+		compagnies, err := enterprise.RemoveEnterpriseTest(c, options, idToken, user.UserPinCode, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
 		require.Equal(t, len(compagnies.RemoveEnterprise), 0)
 	})
@@ -409,17 +442,20 @@ func TestEnterprise(t *testing.T) {
 			ShippingDelay:        new(string),
 			TransactionLibele:    gofakeit.CompanySuffix(),
 			AbregedLibele:        gofakeit.CompanySuffix(),
-			Phone:                gofakeit.Phone(),
-			Email:                gofakeit.Email(),
+			Phone: &model.PhoneInput{
+				Phone:    gofakeit.PhoneFormatted(),
+				Dialcode: gofakeit.Phone(),
+			},
+			Email: gofakeit.Email(),
 		}
 		company, err := enterprise.CreateEnterpriseTest(c, options, idToken, input)
 		require.Empty(t, err)
 		require.NotNil(t, company)
-		_enterprise = company.CreateEnterprise
+		_enterprise = company
 	})
 
 	t.Run("should get new commerce transaction", func(t *testing.T) {
-		auth := _enterprise.PublishableKey + ":" + _enterprise.PrivateKey
+		auth := _enterprise.CreateEnterprise.PublishableKey + ":" + _enterprise.CreateEnterprise.Private_key
 		basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 		_paiment, err := transaction.AuthenticateForPaymentTest(c, options, basicAuth, 100, "")
 		require.Empty(t, err)
@@ -432,7 +468,7 @@ func TestEnterprise(t *testing.T) {
 		_paiement, err := qrcode.GetQrOwnerPaymentTest(c, options, idToken, _transaction.ID)
 		require.Empty(t, err)
 
-		passedPayment, err := enterprise.PayUnConfirmedTransactionTest(c, options, idToken, _enterprise.ID, user.UserPinCode, _paiement.GetQrOwner.ID)
+		passedPayment, err := enterprise.PayUnConfirmedTransactionTest(c, options, idToken, _enterprise.CreateEnterprise.ID, user.UserPinCode, _paiement.GetQrOwner.ID)
 		require.Empty(t, err)
 		require.NotNil(t, passedPayment)
 
@@ -442,12 +478,12 @@ func TestEnterprise(t *testing.T) {
 
 		customToken2, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken2 := firebase.GetIdToken(customToken2)
-		enterpriseBalance, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken2, _enterprise.ID)
+		enterpriseBalance, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken2, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
 		require.Equal(t, enterpriseBalance.GetEnterpriseBalance, float64(100))
 	})
 	t.Run("should get new commerce transaction again", func(t *testing.T) {
-		auth := _enterprise.PublishableKey + ":" + _enterprise.PrivateKey
+		auth := _enterprise.CreateEnterprise.PublishableKey + ":" + _enterprise.CreateEnterprise.Private_key
 		basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 		_paiment, err := transaction.AuthenticateForPaymentTest(c, options, basicAuth, 200, "")
 		require.Empty(t, err)
@@ -460,7 +496,7 @@ func TestEnterprise(t *testing.T) {
 		_paiement, err := qrcode.GetQrOwnerPaymentTest(c, options, idToken, _transaction.ID)
 		require.Empty(t, err)
 
-		passedPayment, err := enterprise.PayUnConfirmedTransactionTest(c, options, idToken, _enterprise.ID, user.UserPinCode, _paiement.GetQrOwner.ID)
+		passedPayment, err := enterprise.PayUnConfirmedTransactionTest(c, options, idToken, _enterprise.CreateEnterprise.ID, user.UserPinCode, _paiement.GetQrOwner.ID)
 		require.Empty(t, err)
 		require.NotNil(t, passedPayment)
 
@@ -470,7 +506,7 @@ func TestEnterprise(t *testing.T) {
 
 		customToken2, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken2 := firebase.GetIdToken(customToken2)
-		enterpriseBalance, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken2, _enterprise.ID)
+		enterpriseBalance, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken2, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
 		require.Equal(t, enterpriseBalance.GetEnterpriseBalance, float64(298))
 	})
@@ -479,7 +515,7 @@ func TestEnterprise(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
 
-		success, err := enterprise.RefundTransactionTest(c, options, idToken, _enterprise.ID, user.UserPinCode, _transaction.ID)
+		success, err := enterprise.RefundTransactionTest(c, options, idToken, _enterprise.CreateEnterprise.ID, user.UserPinCode, _transaction.ID)
 		require.Empty(t, err)
 		require.True(t, success.RefundTransaction)
 
@@ -489,7 +525,7 @@ func TestEnterprise(t *testing.T) {
 		require.Empty(t, err)
 		require.Equal(t, *_wallet.LoadBalance.Amount, float64(9900))
 
-		_wallet_enterprise, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken, _enterprise.ID)
+		_wallet_enterprise, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
 		require.Equal(t, _wallet_enterprise.GetEnterpriseBalance, float64(99))
 	})
@@ -497,7 +533,7 @@ func TestEnterprise(t *testing.T) {
 	t.Run("should send money from enterprise to user", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
-		success, err := enterprise.TransferMoneyEnterpriseTest(c, options, idToken, _enterprise.ID, user.UserPinCode, _db_user1.Keypair.PublicKey, 100)
+		success, err := enterprise.TransferMoneyEnterpriseTest(c, options, idToken, _enterprise.CreateEnterprise.ID, user.UserPinCode, _db_user1.Keypair.PublicKey, 100)
 		require.Empty(t, err)
 		require.True(t, success.TransferMoneyEnterprise)
 
@@ -505,7 +541,7 @@ func TestEnterprise(t *testing.T) {
 		require.Empty(t, err)
 		require.Equal(t, *_wallet.LoadBalance.Amount, float64(9900))
 
-		_wallet_enterprise, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken, _enterprise.ID)
+		_wallet_enterprise, err := enterprise.GetEnterpriseBalanceTest(c, options, idToken, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
 		require.Equal(t, _wallet_enterprise.GetEnterpriseBalance, float64(48.5))
 	})
@@ -548,8 +584,11 @@ func TestEnterprise(t *testing.T) {
 			ShippingDelay:        new(string),
 			TransactionLibele:    gofakeit.CompanySuffix(),
 			AbregedLibele:        gofakeit.CompanySuffix(),
-			Phone:                gofakeit.Phone(),
-			Email:                gofakeit.Email(),
+			Phone: &model.PhoneInput{
+				Phone:    gofakeit.Phone(),
+				Dialcode: gofakeit.Phone(),
+			},
+			Email: gofakeit.Email(),
 		}
 		company, err := enterprise.CreateEnterpriseTest(c, options, idToken, input)
 		require.Empty(t, err)
@@ -562,8 +601,8 @@ func TestEnterprise(t *testing.T) {
 	t.Run("update default enterprise", func(t *testing.T) {
 		customToken, _ := firebase.Connect().CreateCustomToken(context.Background(), auth_uid_1)
 		idToken := firebase.GetIdToken(customToken)
-		compagnies, err := enterprise.ChangeDefaultEnterpriseTest(c, options, idToken, _enterprise.ID)
+		compagnies, err := enterprise.ChangeDefaultEnterpriseTest(c, options, idToken, _enterprise.CreateEnterprise.ID)
 		require.Empty(t, err)
-		require.Equal(t, getDefaultEnterprise(compagnies.ChangeDefaultEnterprise).ID, _enterprise.ID)
+		require.Equal(t, getDefaultEnterprise(compagnies.ChangeDefaultEnterprise).ID, _enterprise.CreateEnterprise.ID)
 	})
 }
