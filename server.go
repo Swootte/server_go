@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"server/user"
 	"server/utils"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/go-chi/chi"
 	"github.com/rs/cors"
 )
@@ -37,6 +39,11 @@ func main() {
 
 	router.Use(middleware.BasicAuthMiddleware())
 	srv := serverutils.StartServer()
+	srv.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+		graphql.GetOperationContext(ctx).DisableIntrospection = true
+		return next(ctx)
+	})
+
 	dataloadersSrv := dataloaders.Middleware(dataloaders.NewLoaders(), srv)
 	//router.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	router.Handle("/graphql", dataloadersSrv)
